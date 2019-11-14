@@ -1,15 +1,14 @@
-from datetime import timedelta
 from numpy import array, ndarray, uint64
 from .events import Event
 from .intervals import Interval
 from .pricing import StandardizedPrice, Candle
-from .timelapses import Timelapse
+from .base_frames import BaseFrame
 
 
 DAY_SIZE = int(Interval.DAY)
 
 
-class SourceFrame(Timelapse):
+class SourceFrame(BaseFrame):
     """
     Source frames are the origin of the data. Internally, they are organized as a sequence of indexed prices
       or candles (depending on the required type: standardized price or candle).
@@ -46,7 +45,7 @@ class SourceFrame(Timelapse):
                 raise TypeError("For pricing.StandardizedPrice type, the initial value must be integer")
             elif type == Candle and not isinstance(initial, Candle):
                 raise TypeError("For pricing.Candle type, the initial value must be a candle instance")
-        Timelapse.__init__(self, interval)
+        BaseFrame.__init__(self, interval)
         self._type = type
         self._timestamp = stamp
         self._last_index = -1
@@ -55,7 +54,6 @@ class SourceFrame(Timelapse):
         # TODO   using a fixed size frame spanning at most 1 day.
         size = DAY_SIZE/int(interval)
         self._data = array((size,), dtype=type)
-        self._on_refresh_views = Event()
         self._on_refresh_indicators = Event()
 
     @property
@@ -72,14 +70,6 @@ class SourceFrame(Timelapse):
         """
 
         return self._timestamp
-
-    @property
-    def on_refresh_views(self):
-        """
-        Views will connect to this event to refresh themselves when more data is added.
-        """
-
-        return self._on_refresh_views
 
     @property
     def on_refresh_indicators(self):
@@ -192,6 +182,7 @@ class SourceFrame(Timelapse):
             if not (is_int or is_int_ndarray):
                 raise TypeError("Data being added must be of int or uint64 numpy array type")
         length = 1 if not is_ndarray else data.size
+        # TODO remove this limitation later
         if index + length >= 86400 / int(self._interval):
             raise RuntimeError("This frame is full - no further data can be added")
         self._interpolate_and_put(index, data)
