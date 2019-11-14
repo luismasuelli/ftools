@@ -1,4 +1,4 @@
-def chunked_slicing(slice_start, slice_stop, chunk_size, chunk_count, logical_length):
+def chunked_slicing(slice_start, slice_stop, chunk_size):
     """
     Iterator that yields, every time, a data structure like this:
       - Current chunk index
@@ -14,8 +14,6 @@ def chunked_slicing(slice_start, slice_stop, chunk_size, chunk_count, logical_le
     :param slice_start: The overall start.
     :param slice_stop: The overall stop.
     :param chunk_size: The chunk size.
-    :param chunk_count: The count of chunks.
-    :param logical_length: The logical length of the overall data.
     :return: A generator.
     """
 
