@@ -1,4 +1,5 @@
-from numpy import array, ndarray
+from numpy import array, ndarray, uint32, zeros
+from .support import chunked_slicing, fix_slicing, fix_input
 
 
 class GrowingArray:
@@ -14,7 +15,7 @@ class GrowingArray:
     """
 
     def __init__(self, dtype, chunk_size=3600, width=1):
-        if chunk_size < 60:
+        if chunk_size < 4:
             raise ValueError("Chunk size cannot be lower than 60")
         if width < 1:
             raise ValueError("Width cannot be lower than 1")
@@ -22,7 +23,7 @@ class GrowingArray:
         self._dtype = dtype
         self._chunk_size = chunk_size
         self._width = width
-        self._max_stop = 0
+        self._length = 0
 
     def __getitem__(self, item):
         """
@@ -31,37 +32,22 @@ class GrowingArray:
         :return: A numpy array with the specified items, if slice, or a single element.
         """
 
-        if isinstance(item, slice):
-            start = item.start
-            stop = item.stop
-            if start < 0 or stop < 0:
-                raise KeyError("Negative indices in slices are not supported")
-            if stop < start:
-                raise KeyError("Slices must have start <= stop indices")
-            elif stop == start:
-                return
-            if item.step != 1:
-                raise KeyError("Slices with step != 1 are not supported")
-        elif isinstance(item, int):
-            if item < 0:
-                raise IndexError("Negative indices are not supported")
-            start = item
-            stop = None
-        else:
-            raise TypeError("Only slices or integer indices are supported")
-        if start >= self._max_stop or stop > stop:
-            raise IndexError(item)
+        start, stop = fix_slicing(item, self._length)
         return self._gather(start, stop)
 
     def _gather(self, start, stop):
         """
         Gathers required data from chunk(s).
         :param start: The start index to start gathering from.
-        :param stop: The stop index (not included) to stop gathering from.
+        :param stop: The stop index (not included) to stop gathering from. It will be None if only one
+          single element (a number or a (1, width) vector) is being retrieved.
         :return: The gathered data (a single element, or a numpy array).
         """
 
-        # TODO
+        data = array((stop-start, self._width), dtype=self._dtype)
+        chunkings = chunked_slicing(start, stop, self._chunk_size)
+        for (data_start, data_stop), chunk, (chunk_start, chunk_stop) in chunkings:
+            data[data_start:data_stop] = self._chunks[chunk][chunk_start:chunk_stop]
 
     def _allocate(self, stop):
         """
@@ -74,19 +60,22 @@ class GrowingArray:
         if stop > total_allocated:
             new_bins = (stop + self._chunk_size - 1)//self._chunk_size - chunks_count
             for _ in range(0, new_bins):
-                self._chunks.append(array((self._chunk_size,), dtype=self._dtype))
-        self._max_stop = max(self._max_stop, stop)
+                self._chunks.append(zeros((self._chunk_size, self._width), dtype=self._dtype))
+        self._length = max(self._length, stop)
 
     def _fill(self, start, stop, data):
         """
         Fills chunk(s) contents with given data.
         :param start: The start index to start filling.
-        :param stop: The stop index (not included) to stop filling.
+        :param stop: The stop index (not included) to stop filling. It will be None if only one
+          single element is being set.
         :param data: The data to fill with.
         :return:
         """
 
-        # TODO
+        chunkings = chunked_slicing(start, stop, self._chunk_size)
+        for (data_start, data_stop), chunk, (chunk_start, chunk_stop) in chunkings:
+            self._chunks[chunk][chunk_start:chunk_stop] = data[data_start:data_stop]
 
     def __setitem__(self, key, value):
         """
@@ -96,27 +85,10 @@ class GrowingArray:
         :param value: The value to set.
         """
 
-        if isinstance(key, slice):
-            start = key.start
-            stop = key.stop
-            if start < 0 or stop < 0:
-                raise KeyError("Negative indices in slices are not supported")
-            if stop < start:
-                raise KeyError("Slices must have start <= stop indices")
-            elif stop == start:
-                return
-            if key.step != 1:
-                raise KeyError("Slices with step != 1 are not supported")
-            if not isinstance(value, ndarray) or value.shape != (stop - start,):
-                raise TypeError("When setting a slice, the value must be a numpy array of (stop - start)x1 elements")
-        elif isinstance(key, int):
-            if key < 0:
-                raise IndexError("Negative indices are not supported")
-            start = key
-            stop = None
-            if isinstance(value, ndarray):
-                raise TypeError("When setting an index, the value must not be a numpy array")
-        else:
-            raise TypeError("Only slices or integer indices are supported")
+        start, stop = fix_slicing(key, self._length)
+        value = fix_input(key, self._width, None if stop is None else stop - start, value)
         self._allocate(stop)
         self._fill(start, stop, value)
+
+    def __str__(self):
+        return "GrowingArray[%s]" % ', '.join(chunk for chunk in self._chunks)
