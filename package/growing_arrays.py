@@ -45,7 +45,7 @@ class GrowingArray:
         """
 
         if stop is None:
-            return self._chunks[start // self._chunk_size][start % self._chunk_size]
+            return self._chunks[start // self._chunk_size][start % self._chunk_size][:]
         else:
             data = array((stop-start, self._width), dtype=self._dtype)
             chunkings = chunked_slicing(start, stop, self._chunk_size)
@@ -94,8 +94,8 @@ class GrowingArray:
 
         start, stop = fix_slicing(key, self._length)
         value = fix_input(key, self._width, None if stop is None else stop - start, value)
-        self._allocate(stop if stop is not None else start)
+        self._allocate(stop if stop is not None else (start + 1))
         self._fill(start, stop, value)
 
     def __str__(self):
-        return "GrowingArray[%s]" % ', '.join(chunk for chunk in self._chunks)
+        return "GrowingArray(%s)" % ', '.join(str(chunk) for chunk in self._chunks)
