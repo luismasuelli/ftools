@@ -5,24 +5,30 @@ def fix_slicing(index, logical_length):
     """
     Checks, and caps, the slices being used.
     :param index: The initial index, which may be int or slice.
-    :param logical_length: The current logical length of the data.
+    :param logical_length: The current logical length of the data. It is used to cap the indices.
+      If None, indices will not be capped.
     :return: The fixed slicing, if no exception occurs.
     """
 
     if isinstance(index, slice):
         if index.step and index.step != 1:
             raise KeyError("Slices with step != 1 are not supported")
-        if slice.start < 0 or slice.stop < 0:
+        if index.start < 0 or index.stop < 0:
             raise KeyError("Negative indices in slices are not supported")
-        if slice.stop < slice.start:
+        if index.stop < index.start:
             raise KeyError("Slices must have start <= stop indices")
+        elif logical_length is None:
+            return index.start, index.stop
         else:
             # Here, start will be <= stop. We will limit both by the logical_length, silently.
-            return min(slice.start, logical_length), min(slice.stop, logical_length)
+            return min(index.start, logical_length), min(index.stop, logical_length)
     elif isinstance(index, int):
         if index < 0:
             raise IndexError("Negative indices are not supported")
-        return min(index, logical_length), None
+        if logical_length is None:
+            return index, None
+        else:
+            return min(index, logical_length), None
     else:
         raise TypeError("Only slices (non-negative, growing, and with step 1) or non-negative integer indices are "
                         "supported")
