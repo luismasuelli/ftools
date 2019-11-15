@@ -1,10 +1,8 @@
-from numpy import array
-
+from numpy import uint32
 from .intervals import Interval
 from .pricing import Candle
 from .timelapses import Timelapse
-
-DAY_SIZE = int(Interval.DAY)
+from .growing_arrays import GrowingArray
 
 
 class View(Timelapse):
@@ -21,9 +19,7 @@ class View(Timelapse):
             raise ValueError("The chosen view interval size must be bigger to the source's interval size")
         Timelapse.__init__(self, interval)
         self._source = source
-        # TODO continue here the same issue in the Source
-        size = DAY_SIZE/int(interval)
-        self._data = array((size,), dtype=Candle)
+        self._data = GrowingArray(uint32, 240, 1)
         self._last_source_index = -1
         self._source.on_refresh_views.register(self._on_refresh)
         self._attached = True
@@ -80,7 +76,7 @@ class View(Timelapse):
           including).
         """
 
-        start = self._last_source_index+1
+        start = self._last_source_index + 1
         for source_index in range(start, end):
             view_index = source_index // self._relative_bin_size
             candle = self._data[view_index]

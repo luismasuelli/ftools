@@ -1,11 +1,8 @@
-from numpy import array, ndarray, uint64
-
+from numpy import ndarray, uint64
 from .base_frames import BaseFrame
 from .events import Event
-from .intervals import Interval
 from .pricing import StandardizedPrice, Candle
-
-DAY_SIZE = int(Interval.DAY)
+from .growing_arrays import GrowingArray
 
 
 class SourceFrame(BaseFrame):
@@ -50,10 +47,7 @@ class SourceFrame(BaseFrame):
         self._timestamp = stamp
         self._last_index = -1
         self._initial = initial
-        # TODO some day, break this limitation and create some sort of "growing data" instead of
-        # TODO   using a fixed size frame spanning at most 1 day.
-        size = DAY_SIZE/int(interval)
-        self._data = array((size,), dtype=type)
+        self._data = GrowingArray(self._type, 240, 1)
         self._on_refresh_indicators = Event()
 
     @property
@@ -106,18 +100,18 @@ class SourceFrame(BaseFrame):
         if isinstance(previous_value, int):
             delta = float(next_value - previous_value)/distance
             for index in range(0, distance - 1):
-                self._data[start + index] = delta*(index + 1) + previous_value
+                self._data[start + index] = int(delta * (index + 1) + previous_value)
         elif isinstance(previous_value, Candle):
-            delta_start = float(next_value.start - previous_value.start)/distance
-            delta_end = float(next_value.end - previous_value.end)/distance
-            delta_max = float(next_value.max - previous_value.max)/distance
-            delta_min = float(next_value.min - previous_value.min)/distance
+            delta_start = float(next_value.start - previous_value.start) / distance
+            delta_end = float(next_value.end - previous_value.end) / distance
+            delta_max = float(next_value.max - previous_value.max) / distance
+            delta_min = float(next_value.min - previous_value.min) / distance
             for index in range(0, distance - 1):
                 self._data[start + index] = Candle(
-                    start=delta_start*(index + 1) + previous_value.start,
-                    end=delta_end*(index + 1) + previous_value.end,
-                    min=delta_min*(index + 1) + previous_value.min,
-                    max=delta_max*(index + 1) + previous_value.max
+                    start=int(delta_start * (index + 1) + previous_value.start),
+                    end=int(delta_end * (index + 1) + previous_value.end),
+                    min=int(delta_min * (index + 1) + previous_value.min),
+                    max=int(delta_max * (index + 1) + previous_value.max)
                 )
 
     def _interpolate_and_put(self, push_index, push_data):
@@ -182,9 +176,6 @@ class SourceFrame(BaseFrame):
             if not (is_int or is_int_ndarray):
                 raise TypeError("Data being added must be of int or uint64 numpy array type")
         length = 1 if not is_ndarray else data.size
-        # TODO remove this limitation later
-        if index + length >= 86400 / int(self._interval):
-            raise RuntimeError("This frame is full - no further data can be added")
         self._interpolate_and_put(index, data)
         end = index + length
         self._last_index = end - 1
