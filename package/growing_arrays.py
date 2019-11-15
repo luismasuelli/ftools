@@ -1,5 +1,4 @@
 from numpy import array, zeros
-
 from .support import chunked_slicing, fix_slicing, fix_input
 
 
@@ -45,10 +44,14 @@ class GrowingArray:
         :return: The gathered data (a single element, or a numpy array).
         """
 
-        data = array((stop-start, self._width), dtype=self._dtype)
-        chunkings = chunked_slicing(start, stop, self._chunk_size)
-        for (data_start, data_stop), chunk, (chunk_start, chunk_stop) in chunkings:
-            data[data_start:data_stop] = self._chunks[chunk][chunk_start:chunk_stop]
+        if stop is None:
+            return self._chunks[start // self._chunk_size][start % self._chunk_size]
+        else:
+            data = array((stop-start, self._width), dtype=self._dtype)
+            chunkings = chunked_slicing(start, stop, self._chunk_size)
+            for (data_start, data_stop), chunk, (chunk_start, chunk_stop) in chunkings:
+                data[data_start:data_stop] = self._chunks[chunk][chunk_start:chunk_stop]
+            return data
 
     def _allocate(self, stop):
         """
@@ -74,9 +77,12 @@ class GrowingArray:
         :return:
         """
 
-        chunkings = chunked_slicing(start, stop, self._chunk_size)
-        for (data_start, data_stop), chunk, (chunk_start, chunk_stop) in chunkings:
-            self._chunks[chunk][chunk_start:chunk_stop] = data[data_start:data_stop]
+        if stop is None:
+            self._chunks[start // self._chunk_size][start % self._chunk_size] = data
+        else:
+            chunkings = chunked_slicing(start, stop, self._chunk_size)
+            for (data_start, data_stop), chunk, (chunk_start, chunk_stop) in chunkings:
+                self._chunks[chunk][chunk_start:chunk_stop] = data[data_start:data_stop]
 
     def __setitem__(self, key, value):
         """
@@ -88,7 +94,7 @@ class GrowingArray:
 
         start, stop = fix_slicing(key, self._length)
         value = fix_input(key, self._width, None if stop is None else stop - start, value)
-        self._allocate(stop)
+        self._allocate(stop if stop is not None else start)
         self._fill(start, stop, value)
 
     def __str__(self):
