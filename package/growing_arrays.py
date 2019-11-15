@@ -92,10 +92,13 @@ class GrowingArray:
         :param value: The value to set.
         """
 
-        start, stop = fix_slicing(key, self._length)
+        start, stop = fix_slicing(key, None)
         value = fix_input(key, self._width, None if stop is None else stop - start, value)
         self._allocate(stop if stop is not None else (start + 1))
         self._fill(start, stop, value)
 
-    def __str__(self):
+    def __repr__(self):
         return "GrowingArray(%s)" % ', '.join(str(chunk) for chunk in self._chunks)
+
+    def __str__(self):
+        return repr(self)
