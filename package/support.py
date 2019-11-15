@@ -142,3 +142,5 @@ def chunked_slicing(slice_start, slice_stop, chunk_size):
             # If not, then we move the data index and the current chunk.
             current_chunk += 1
             data_index += length
+            # Finish the first iteration.
+            first_iteration = False
