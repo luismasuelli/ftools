@@ -1,6 +1,6 @@
-from numpy import uint64 as _uint64
 from collections import namedtuple
 
+from numpy import uint64 as _uint64
 
 """
 Defined both the standardized price and the japanese candle. The japanese candle holds

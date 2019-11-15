@@ -1,5 +1,5 @@
-from .timelapses import Timelapse
 from .events import Event
+from .timelapses import Timelapse
 
 
 class BaseFrame(Timelapse):

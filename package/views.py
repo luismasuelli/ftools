@@ -1,8 +1,8 @@
 from numpy import array
+
 from .intervals import Interval
 from .pricing import Candle
 from .timelapses import Timelapse
-
 
 DAY_SIZE = int(Interval.DAY)
 

@@ -1,4 +1,5 @@
-from numpy import array, ndarray, uint32, zeros
+from numpy import array, zeros
+
 from .support import chunked_slicing, fix_slicing, fix_input
 
 

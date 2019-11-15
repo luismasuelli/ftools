@@ -1,9 +1,9 @@
 from numpy import array, ndarray, uint64
+
+from .base_frames import BaseFrame
 from .events import Event
 from .intervals import Interval
 from .pricing import StandardizedPrice, Candle
-from .base_frames import BaseFrame
-
 
 DAY_SIZE = int(Interval.DAY)
 
