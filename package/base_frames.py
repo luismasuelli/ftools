@@ -4,19 +4,18 @@ from .timelapses import Timelapse
 
 class BaseFrame(Timelapse):
     """
-    Base frames are frames with the highest granularity. Sources and indicators are,
-      actually, base frames. Views connect to them.
+    Base frames are frames with the highest granularity. Digests connect to them.
     """
 
     def __init__(self, interval):
         Timelapse.__init__(self, interval)
-        self._on_refresh_views = Event()
+        self._on_refresh_digests = Event()
 
     @property
-    def on_refresh_views(self):
+    def on_refresh_digests(self):
         """
-        Views will connect to this event to refresh themselves when more data is added.
+        Digests will connect to this event to refresh themselves when more data is added.
         """
 
-        return self._on_refresh_views
+        return self._on_refresh_digests
 

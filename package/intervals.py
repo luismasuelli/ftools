@@ -3,7 +3,7 @@ from enum import IntEnum
 
 class Interval(IntEnum):
     """
-    These values can be used as intervals for source (original data) or view (digested data).
+    These values can be used as intervals for source (original data) or digested data.
     They can also constrain/truncate a timestamp to be relevant for the interval being considered.
     """
 
@@ -30,9 +30,9 @@ class Interval(IntEnum):
 
         return self in (self.SECOND, self.MINUTE, self.MINUTE5, self.MINUTE30, self.HOUR)
 
-    def allowed_as_view(self, for_source_interval=SECOND):
+    def allowed_as_digest(self, for_source_interval=SECOND):
         """
-        Tells whether this interval can be used in a view frame given a related source frame size.
+        Tells whether this interval can be used in a digest frame given a related source frame size.
         Aside from being allowed, this interval size must be GREATER than the given, optional, one.
         :param for_source_interval: The source frame size to compare.
         """

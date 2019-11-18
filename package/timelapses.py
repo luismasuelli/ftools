@@ -4,7 +4,7 @@ from datetime import timedelta
 class Timelapse:
     """
     Timelapse is an abstract class allowing us to handle common utilities regarding
-      datetimes in frames, views, and indicators.
+      datetimes in frames, digests, and indicators.
     """
 
     def __init__(self, interval):
@@ -19,8 +19,8 @@ class Timelapse:
     @property
     def interval(self):
         """
-        The interval size for this source. Views must use BIGGER intervals in order to be able to
-          connect to this source, for views are digests.
+        The interval size for this source. Digests must use BIGGER intervals in order to be able to
+          connect to this source.
         """
 
         return self._interval

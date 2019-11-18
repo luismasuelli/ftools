@@ -14,13 +14,11 @@ class SourceFrame(BaseFrame):
       know its context of work. After that, data may be added (either to the next available index or a given
       index that must be at least greater to the next one) and, if discontinuous, it will cause a kind of
       padding or interpolation in the frame data (this implies: data must be added IN STRICT ORDER to work
-      properly), up to the index 86399. Also, the views this source frame will support.
+      properly).
 
     When data is added, it will refresh two types of related (derived) frames:
-      - Views of the current frame.
-      - Indicators tied to this frame.
-        - Inside of each indicator, its views (which are of, strictly, the same size of the views
-          in THIS frame).
+      - Digests of the current frame.
+      - Indicators of this frame.
     """
 
     def __init__(self, type, stamp, interval, initial=None):
@@ -179,5 +177,5 @@ class SourceFrame(BaseFrame):
         self._interpolate_and_put(index, data)
         end = index + length
         self._last_index = end - 1
-        self._on_refresh_views.trigger(end)
+        self._on_refresh_digests.trigger(end)
         self._on_refresh_indicators.trigger(end)
