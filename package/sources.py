@@ -32,12 +32,12 @@ class Source(Timelapse):
 
         if not interval.allowed_as_source():
             raise ValueError('The given interval is not allowed as source frame interval: %s' % interval)
-        if type not in (StandardizedPrice, Candle):
+        if dtype not in (StandardizedPrice, Candle):
             raise ValueError('The source frame type must be either pricing.Candle or pricing.StandardizedPrice')
         if initial is not None:
-            if type == StandardizedPrice and not isinstance(initial, int):
+            if dtype == StandardizedPrice and not isinstance(initial, int):
                 raise TypeError("For pricing.StandardizedPrice type, the initial value must be integer")
-            elif type == Candle and not isinstance(initial, Candle):
+            elif dtype == Candle and not isinstance(initial, Candle):
                 raise TypeError("For pricing.Candle type, the initial value must be a candle instance")
         Timelapse.__init__(self, dtype, interval, 3600, 1)
         self._timestamp = stamp
