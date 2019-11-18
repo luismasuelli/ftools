@@ -1,11 +1,11 @@
 from numpy import ndarray, uint64
-from .base_frames import BaseFrame
+from .timelapses import Timelapse
 from .events import Event
 from .pricing import StandardizedPrice, Candle
 from .growing_arrays import GrowingArray
 
 
-class SourceFrame(BaseFrame):
+class SourceFrame(Timelapse):
     """
     Source frames are the origin of the data. Internally, they are organized as a sequence of indexed prices
       or candles (depending on the required type: standardized price or candle).
@@ -13,8 +13,7 @@ class SourceFrame(BaseFrame):
     A type, an initial timestamp (e.g. day of activity) and an interval type is needed for the source frame
       know its context of work. After that, data may be added (either to the next available index or a given
       index that must be at least greater to the next one) and, if discontinuous, it will cause a kind of
-      padding or interpolation in the frame data (this implies: data must be added IN STRICT ORDER to work
-      properly).
+      padding or interpolation in the frame data.
 
     When data is added, it will refresh two types of related (derived) frames:
       - Digests of the current frame.
@@ -40,12 +39,13 @@ class SourceFrame(BaseFrame):
                 raise TypeError("For pricing.StandardizedPrice type, the initial value must be integer")
             elif type == Candle and not isinstance(initial, Candle):
                 raise TypeError("For pricing.Candle type, the initial value must be a candle instance")
-        BaseFrame.__init__(self, interval)
+        Timelapse.__init__(self, interval)
         self._type = type
         self._timestamp = stamp
         self._last_index = -1
         self._initial = initial
         self._data = GrowingArray(self._type, 240, 1)
+        self._on_refresh_digests = Event()
         self._on_refresh_indicators = Event()
 
     @property
@@ -70,6 +70,14 @@ class SourceFrame(BaseFrame):
         """
 
         return self._on_refresh_indicators
+
+    @property
+    def on_refresh_digests(self):
+        """
+        Digests will connect to this event to refresh themselves when more data is added.
+        """
+
+        return self._on_refresh_digests
 
     def __getitem__(self, item):
         """
@@ -146,11 +154,11 @@ class SourceFrame(BaseFrame):
         Adds data, either scalar of the expected type, or a data chunk of the expected type.
         Always, at given index.
 
-        If the frame is full, or would fill and overflow given the data or chunk, an exception
-          will be raised. The maximum frame size is 86400/{interval size}.
         :param data: The data to add.
-        :param index: The index to add the data at. By default, the next index. It must always
-          be greater than the current last index.
+        :param index: The index to add the data at. By default, the next index. It is allowed
+          to update old data, but think it twice: it MAY trigger an update of old data, not account
+          for actual data re-interpolation, and cascade the changes forward in unpredictable ways,
+          which may involve SEVERAL QUITE COSTLY COMPUTATIONS!!.
         :return:
         """
 
@@ -175,5 +183,5 @@ class SourceFrame(BaseFrame):
         self._interpolate_and_put(index, data)
         end = index + length
         self._last_index = max(self._last_index, end - 1)
-        self._on_refresh_digests.trigger(end)
-        self._on_refresh_indicators.trigger(end)
+        self._on_refresh_digests.trigger(index, end)
+        self._on_refresh_indicators.trigger(index, end)

@@ -1,5 +1,5 @@
 from numpy import uint32
-from .intervals import Interval
+from .events import Event
 from .pricing import Candle
 from .timelapses import Timelapse
 from .growing_arrays import GrowingArray
@@ -23,6 +23,7 @@ class Digest(Timelapse):
         self._source.on_refresh_digests.register(self._on_refresh)
         self._attached = True
         self._relative_bin_size = int(interval)/int(source.interval)
+        self._on_refresh_linked_sources = Event()
 
     @property
     def source(self):
@@ -56,6 +57,15 @@ class Digest(Timelapse):
         self._source.on_refresh_digests.unregister(self._on_refresh)
         self._attached = False
 
+    def on_refresh_linked_sources(self):
+        """
+        This event notifies linked frames that they must update their data according
+          to update triggers in this digest. Frames can link to and unlink from this
+          event at will, with no issues.
+        """
+
+        return self._on_refresh_linked_sources
+
     def __getitem__(self, item):
         """
         Gets values from the underlying array.
@@ -65,17 +75,20 @@ class Digest(Timelapse):
 
         return self._data[item]
 
-    def _on_refresh(self, end):
+    def _on_refresh(self, start, end):
         """
         Updates the current digest given its data. It will give the last index the digest will
           have to process until (perhaps the digest has former data already parsed, and so
           it will have to collect less data). Several source indices falling in the same
           digest index will involve a candle merge.
+        :param start: The source-scaled index the digest will have to refresh from.
         :param end: The source-scaled end index the digest will have to refresh until (and not
           including).
         """
 
-        start = self._last_source_index + 1
+        min_index = start // self._relative_bin_size
+        max_index = (end + self._relative_bin_size - 1) // self._relative_bin_size
+
         for source_index in range(start, end):
             digest_index = source_index // self._relative_bin_size
             candle = self._data[digest_index]
@@ -89,3 +102,5 @@ class Digest(Timelapse):
                 candle = candle.merge(source_element)
             self._data[digest_index] = candle
         self._last_source_index = max(self._last_source_index, end - 1)
+        self._on_refresh_linked_sources.trigger(min_index, max_index)
+
