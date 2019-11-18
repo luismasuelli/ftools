@@ -30,3 +30,10 @@ class Candle(namedtuple('BaseCandle', ('start', 'end', 'min', 'max'))):
                           min=min(self.min, price.min), max=max(self.max, price.max))
         else:
             raise TypeError("Only integers or candles can be merged to an existing candle")
+
+    def __repr__(self):
+        return "Candle(%d, %d, %d, %d)" % (self.start, self.min, self.max, self.end)
+
+    def __str__(self):
+        return repr(self)
+
