@@ -11,17 +11,24 @@ def fix_slicing(index, logical_length):
     """
 
     if isinstance(index, slice):
-        if index.step and index.step != 1:
+        start = index.start
+        stop = index.stop
+        step = index.step
+        if start is None:
+            start = 0
+        if stop is None:
+            stop = logical_length
+        if step and step != 1:
             raise KeyError("Slices with step != 1 are not supported")
-        if index.start < 0 or index.stop < 0:
+        if start < 0 or stop < 0:
             raise KeyError("Negative indices in slices are not supported")
-        if index.stop < index.start:
+        if stop < start:
             raise KeyError("Slices must have start <= stop indices")
         elif logical_length is None:
-            return index.start, index.stop
+            return start, stop
         else:
             # Here, start will be <= stop. We will limit both by the logical_length, silently.
-            return min(index.start, logical_length), min(index.stop, logical_length)
+            return min(start, logical_length), min(stop, logical_length)
     elif isinstance(index, int):
         if index < 0:
             raise IndexError("Negative indices are not supported")
