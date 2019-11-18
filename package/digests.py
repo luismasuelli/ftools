@@ -88,4 +88,4 @@ class Digest(Timelapse):
             else:
                 candle = candle.merge(source_element)
             self._data[digest_index] = candle
-        self._last_source_index = end
+        self._last_source_index = max(self._last_source_index, end - 1)

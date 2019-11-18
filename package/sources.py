@@ -158,8 +158,6 @@ class SourceFrame(BaseFrame):
             index = self._last_index + 1
         if index < 0:
             raise IndexError("Index to push data into cannot be negative")
-        if index <= self._last_index:
-            raise IndexError("Specified index is already used: %d" % index)
         is_ndarray = isinstance(data, ndarray)
         is_int_ndarray = is_ndarray and data.dtype == uint64
         is_obj_ndarray = is_ndarray and data.dtype == object
@@ -176,6 +174,6 @@ class SourceFrame(BaseFrame):
         length = 1 if not is_ndarray else data.size
         self._interpolate_and_put(index, data)
         end = index + length
-        self._last_index = end - 1
+        self._last_index = max(self._last_index, end - 1)
         self._on_refresh_digests.trigger(end)
         self._on_refresh_indicators.trigger(end)
