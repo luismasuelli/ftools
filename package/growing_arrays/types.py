@@ -114,3 +114,6 @@ class GrowingArray:
 
     def __str__(self):
         return repr(self)
+
+    def __len__(self):
+        return self._length
