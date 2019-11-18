@@ -1,5 +1,4 @@
 from collections import namedtuple
-
 from numpy import uint64 as _uint64
 
 """
