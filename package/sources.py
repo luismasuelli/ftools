@@ -5,7 +5,7 @@ from .pricing import StandardizedPrice, Candle
 from .growing_arrays import GrowingArray
 
 
-class SourceFrame(Timelapse):
+class Source(Timelapse):
     """
     Source frames are the origin of the data. Internally, they are organized as a sequence of indexed prices
       or candles (depending on the required type: standardized price or candle).
