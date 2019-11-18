@@ -38,7 +38,7 @@ class Digest(Timelapse):
         Implements the timestamp by returning the source's timestamp.
         """
 
-        return self._source.timestamp
+        return self.interval.round(self._source.timestamp)
 
     @property
     def attached(self):
@@ -57,6 +57,7 @@ class Digest(Timelapse):
         self._source.on_refresh_digests.unregister(self._on_refresh)
         self._attached = False
 
+    @property
     def on_refresh_linked_sources(self):
         """
         This event notifies linked frames that they must update their data according
