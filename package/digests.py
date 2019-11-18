@@ -1,8 +1,6 @@
-from numpy import uint32
 from .events import Event
 from .pricing import Candle
 from .timelapses import Timelapse
-from .growing_arrays import GrowingArray
 
 
 class Digest(Timelapse):
@@ -16,9 +14,8 @@ class Digest(Timelapse):
             raise ValueError("The source for the digest must not be None")
         if not interval.allowed_as_digest(source.interval):
             raise ValueError("The chosen digest interval size must be bigger to the source's interval size")
-        Timelapse.__init__(self, interval)
+        Timelapse.__init__(self, Candle, interval, 240, 1)
         self._source = source
-        self._data = GrowingArray(uint32, 240, 1)
         self._source.on_refresh_digests.register(self._on_refresh)
         self._attached = True
         self._relative_bin_size = int(interval)/int(source.interval)
@@ -65,15 +62,6 @@ class Digest(Timelapse):
         """
 
         return self._on_refresh_linked_sources
-
-    def __getitem__(self, item):
-        """
-        Gets values from the underlying array.
-        :param item: The item (index or slice) to use to get the data from the underlying array.
-        :return:
-        """
-
-        return self._data[item][:]
 
     def _on_refresh(self, start, end):
         """

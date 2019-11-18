@@ -20,10 +20,10 @@ class SourceFrame(Timelapse):
       - Indicators of this frame.
     """
 
-    def __init__(self, type, stamp, interval, initial=None):
+    def __init__(self, dtype, stamp, interval, initial=None):
         """
         Creates a source frame with certain type, initial timestamp, an interval and an initial value.
-        :param type: Either standardized price or candle.
+        :param dtype: Either standardized price or candle.
         :param stamp: The initial time stamp. It will correspond to the sequence index 0.
         :param interval: The required interval.
         :param initial: The initial value for this frame. Usually being dragged from previous period.
@@ -39,22 +39,12 @@ class SourceFrame(Timelapse):
                 raise TypeError("For pricing.StandardizedPrice type, the initial value must be integer")
             elif type == Candle and not isinstance(initial, Candle):
                 raise TypeError("For pricing.Candle type, the initial value must be a candle instance")
-        Timelapse.__init__(self, interval)
-        self._type = type
+        Timelapse.__init__(self, dtype, interval, 3600, 1)
         self._timestamp = stamp
         self._initial = initial
-        self._data = GrowingArray(self._type, 240, 1)
         self._on_refresh_digests = Event()
         self._on_refresh_indicators = Event()
         self._linked_to = None
-
-    @property
-    def type(self):
-        """
-        The type of element this frame works with. Either StandardizedPrice (int) or Candle (Candle).
-        """
-
-        return self._type
 
     def _get_timestamp(self):
         """
@@ -78,15 +68,6 @@ class SourceFrame(Timelapse):
         """
 
         return self._on_refresh_digests
-
-    def __getitem__(self, item):
-        """
-        Gets values from the underlying array.
-        :param item: The item (index or slice) to use to get the data from the underlying array.
-        :return:
-        """
-
-        return self._data[item]
 
     def _interpolate(self, previous_value, start, end, next_value):
         """
@@ -132,17 +113,18 @@ class SourceFrame(Timelapse):
         :param push_data: The data being pushed.
         """
 
-        left_side = self._initial if self._length == -1 else self._data[self._length]
-        needs_interpolation = push_index - 1 > self._length
+        length = len(self)
+        left_side = self._initial if length == -1 else self._data[length]
+        needs_interpolation = push_index - 1 > length
         is_ndarray = isinstance(push_data, ndarray)
         if needs_interpolation:
-            if self._length == -1 and left_side is None:
+            if length == -1 and left_side is None:
                 raise RuntimeError("Cannot add data: interpolation is needed for the required index "
                                    "to push the data into, but an initial value was never set for "
                                    "this frame")
             # Performs the interpolation.
             right_side = push_data[0] if is_ndarray else push_data
-            self._interpolate(left_side, self._length + 1, push_index, right_side)
+            self._interpolate(left_side, length + 1, push_index, right_side)
         # Performs the insertion.
         if is_ndarray:
             self._data[push_index:push_index+push_data.size] = push_data[:]
@@ -166,7 +148,7 @@ class SourceFrame(Timelapse):
         self._linked_to = digest.on_refresh_linked_sources
         self._linked_to.register(self._on_linked_refresh)
         # Force the first refresh.
-        self._on_linked_refresh(digest.timestamp, 0, digest.length)
+        self._on_linked_refresh(digest.timestamp, 0, len(digest))
 
     def unlink(self):
         """
@@ -205,12 +187,11 @@ class SourceFrame(Timelapse):
         """
 
         if index is None:
-            index = self._length
+            index = len(self)
         if index < 0:
             raise IndexError("Index to push data into cannot be negative")
         self._interpolate_and_put(index, data)
         # Arrays have length in their shape, while other elements have size=1.
         end = index + (1 if not isinstance(data, ndarray) else data.shape[0])
-        self._length = max(self._length, end)
         self._on_refresh_digests.trigger(index, end)
         self._on_refresh_indicators.trigger(index, end)
