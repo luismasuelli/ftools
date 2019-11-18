@@ -1,8 +1,7 @@
-from numpy import ndarray, uint64
+from numpy import ndarray
 from .timelapses import Timelapse
 from .events import Event
 from .pricing import StandardizedPrice, Candle
-from .growing_arrays import GrowingArray
 
 
 class Source(Timelapse):
