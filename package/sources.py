@@ -42,11 +42,11 @@ class SourceFrame(Timelapse):
         Timelapse.__init__(self, interval)
         self._type = type
         self._timestamp = stamp
-        self._last_index = -1
         self._initial = initial
         self._data = GrowingArray(self._type, 240, 1)
         self._on_refresh_digests = Event()
         self._on_refresh_indicators = Event()
+        self._linked_to = None
 
     @property
     def type(self):
@@ -132,22 +132,64 @@ class SourceFrame(Timelapse):
         :param push_data: The data being pushed.
         """
 
-        left_side = self._initial if self._last_index == -1 else self._data[self._last_index]
-        needs_interpolation = push_index - 1 > self._last_index
+        left_side = self._initial if self._length == -1 else self._data[self._length]
+        needs_interpolation = push_index - 1 > self._length
         is_ndarray = isinstance(push_data, ndarray)
         if needs_interpolation:
-            if self._last_index == -1 and left_side is None:
+            if self._length == -1 and left_side is None:
                 raise RuntimeError("Cannot add data: interpolation is needed for the required index "
                                    "to push the data into, but an initial value was never set for "
                                    "this frame")
             # Performs the interpolation.
             right_side = push_data[0] if is_ndarray else push_data
-            self._interpolate(left_side, self._last_index + 1, push_index, right_side)
+            self._interpolate(left_side, self._length + 1, push_index, right_side)
         # Performs the insertion.
         if is_ndarray:
             self._data[push_index:push_index+push_data.size] = push_data[:]
         else:
             self._data[push_index] = push_data
+
+    def link(self, digest):
+        """
+        Links this frame to another digest, so data can be updated from it into this frame's data.
+        It is an error to link to a digest with a different interval size or a LOWER date: frames can
+          only link to digests with a greater date (and back-fill positions in previous time stamps).
+        Linking to a digest will automatically unlink from the previous digest, if any.
+        :param digest: The digest to link to.
+        """
+
+        self.unlink()
+        if digest.timestamp < self._timestamp:
+            raise ValueError("The date of the digest attempted to link to is lower than this frame's date")
+        if digest.interval < self.interval:
+            raise ValueError("The digest to link to must have the same interval of this frame")
+        self._linked_to = digest.on_refresh_linked_sources
+        self._linked_to.register(self._on_linked_refresh)
+        # Force the first refresh.
+        self._on_linked_refresh(digest.timestamp, 0, digest.length)
+
+    def unlink(self):
+        """
+        Unlinks this frame from its currently linked digest.
+        :return:
+        """
+
+        self._linked_to.unregister(self._on_linked_refresh)
+        self._linked_to = None
+
+    def _on_linked_refresh(self, digest, start, end):
+        """
+        Handles an update from the linked digest considering start date and boundaries.
+        It is guaranteed that boundaries will be in the same scale of this frame, but
+          it has also be taken into account the start date to use as offset for the
+          start and end indices.
+        :param digest: The linked digest.
+        :param start: The start index, in the digest, of the updated data.
+        :param end: The end index (not including), in the digest, of the updated data.
+        """
+
+        base_index = self.index_for(digest.timestamp)
+        self.push(digest[start:end], base_index + start)
 
     def push(self, data, index=None):
         """
@@ -163,25 +205,12 @@ class SourceFrame(Timelapse):
         """
 
         if index is None:
-            index = self._last_index + 1
+            index = self._length
         if index < 0:
             raise IndexError("Index to push data into cannot be negative")
-        is_ndarray = isinstance(data, ndarray)
-        is_int_ndarray = is_ndarray and data.dtype == uint64
-        is_obj_ndarray = is_ndarray and data.dtype == object
-        is_int = isinstance(data, int)
-        is_obj = isinstance(data, Candle)
-        if is_ndarray and len(data.shape) != 1:
-            raise TypeError("Only 1-dimensional numpy arrays are allowed")
-        if self._type == Candle:
-            if not (is_obj or is_obj_ndarray):
-                raise TypeError("Data being added must be of Candle (scalar/numpy array) type")
-        elif self._type == StandardizedPrice:
-            if not (is_int or is_int_ndarray):
-                raise TypeError("Data being added must be of int or uint64 numpy array type")
-        length = 1 if not is_ndarray else data.size
         self._interpolate_and_put(index, data)
-        end = index + length
-        self._last_index = max(self._last_index, end - 1)
+        # Arrays have length in their shape, while other elements have size=1.
+        end = index + (1 if not isinstance(data, ndarray) else data.shape[0])
+        self._length = max(self._length, end)
         self._on_refresh_digests.trigger(index, end)
         self._on_refresh_indicators.trigger(index, end)

@@ -9,6 +9,7 @@ class Timelapse:
 
     def __init__(self, interval):
         self._interval = interval
+        self._length = 0
 
     def stamp_for(self, index):
         return self._get_timestamp() + timedelta(seconds=index * int(self._interval))
@@ -34,3 +35,10 @@ class Timelapse:
     @property
     def timestamp(self):
         return self._get_timestamp()
+
+    @property
+    def length(self):
+        return self._length
+
+    def __len__(self):
+        return self._length

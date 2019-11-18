@@ -19,7 +19,6 @@ class Digest(Timelapse):
         Timelapse.__init__(self, interval)
         self._source = source
         self._data = GrowingArray(uint32, 240, 1)
-        self._last_source_index = -1
         self._source.on_refresh_digests.register(self._on_refresh)
         self._attached = True
         self._relative_bin_size = int(interval)/int(source.interval)
@@ -74,7 +73,7 @@ class Digest(Timelapse):
         :return:
         """
 
-        return self._data[item]
+        return self._data[item][:]
 
     def _on_refresh(self, start, end):
         """
@@ -102,6 +101,6 @@ class Digest(Timelapse):
             else:
                 candle = candle.merge(source_element)
             self._data[digest_index] = candle
-        self._last_source_index = max(self._last_source_index, end - 1)
+        self._length = max(self._length, end)
         self._on_refresh_linked_sources.trigger(min_index, max_index)
 
