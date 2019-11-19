@@ -52,15 +52,11 @@ class GrowingArray:
         if stop is None:
             chunk_index = start // self._chunk_size
             chunk_pos = start % self._chunk_size
-            # print("Retrieving from chunk %d index %d" % (chunk_index, chunk_pos))
             return self._chunks[chunk_index][chunk_pos][:]
         else:
             data = zeros((stop-start, self._width), dtype=self._dtype)
             chunkings = chunked_slicing(start, stop, self._chunk_size)
             for (data_start, data_stop), chunk, (chunk_start, chunk_stop) in chunkings:
-                # print("Getting chunk %d [%d:%d] to data [%d:%d]" % (
-                #     chunk, chunk_start, chunk_stop, data_start, data_stop
-                # ))
                 data[data_start:data_stop, :] = self._chunks[chunk][chunk_start:chunk_stop, :]
             return data
 
@@ -73,7 +69,7 @@ class GrowingArray:
         chunks_count = len(self._chunks)
         total_allocated = chunks_count * self._chunk_size
         if stop > total_allocated:
-            new_bins = (stop + self._chunk_size - 1)//self._chunk_size - chunks_count
+            new_bins = (stop + self._chunk_size - 1) // self._chunk_size - chunks_count
             for _ in range(0, new_bins):
                 arr = full((self._chunk_size, self._width), dtype=self._dtype, fill_value=self._fill_value)
                 self._chunks.append(arr)
@@ -92,14 +88,10 @@ class GrowingArray:
         if stop is None:
             chunk_index = start // self._chunk_size
             chunk_pos = start % self._chunk_size
-            # print("Setting chunk %d index %d" % (chunk_index, chunk_pos))
             self._chunks[chunk_index][chunk_pos] = data
         else:
             chunkings = chunked_slicing(start, stop, self._chunk_size)
             for (data_start, data_stop), chunk, (chunk_start, chunk_stop) in chunkings:
-                # print("Setting chunk %d [%d:%d] to data [%d:%d]" % (
-                #     chunk, chunk_start, chunk_stop, data_start, data_stop
-                # ))
                 self._chunks[chunk][chunk_start:chunk_stop] = data[data_start:data_stop]
 
     def __setitem__(self, key, value):
