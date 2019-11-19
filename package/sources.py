@@ -1,4 +1,4 @@
-from numpy import ndarray
+from numpy import ndarray, dtype
 from .timelapses import Timelapse
 from .events import Event
 from .pricing import StandardizedPrice, Candle
@@ -101,6 +101,26 @@ class Source(Timelapse):
                     max=int(delta_max * (index + 1) + previous_value.max)
                 )
 
+    def _check_input_matching_types(self, data):
+        """
+        Checks whether the input matches the requirement.
+        :param data: The data to check.
+        :param many: Whether the data should involve many elements (a numpy array).
+        :return:
+        """
+
+        if isinstance(data, ndarray):
+            if self._data.dtype != data.dtype:
+                raise TypeError("Array input data must match the required type")
+        elif isinstance(data, Candle):
+            if self._data.dtype != Candle:
+                raise TypeError("Scalar input data must match the required type")
+        elif isinstance(data, (int, StandardizedPrice)):
+            if self._data.dtype != StandardizedPrice:
+                raise TypeError("Scalar input data must match the required type")
+        else:
+            raise TypeError("Invalid input data type")
+
     def _put_and_interpolate(self, push_index, push_data):
         """
         First, it will put the data appropriately. Then it will try an interpolation -if needed- of the data,
@@ -179,9 +199,7 @@ class Source(Timelapse):
         """
 
         base_index = self.index_for(digest.timestamp)
-        print("start, end, base index:", start, end, base_index)
         start = min(start, self._linked_last_read_ubound)
-        print("start, end, base index:", start, end, base_index)
         self.push(digest[start:end], base_index + start)
         self._linked_last_read_ubound = max(self._linked_last_read_ubound, end)
 
@@ -202,6 +220,7 @@ class Source(Timelapse):
             index = len(self)
         if index < 0:
             raise IndexError("Index to push data into cannot be negative")
+        self._check_input_matching_types(data)
         self._put_and_interpolate(index, data)
         # Arrays have length in their shape, while other elements have size=1.
         end = index + (1 if not isinstance(data, ndarray) else data.shape[0])
