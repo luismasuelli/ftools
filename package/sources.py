@@ -109,16 +109,13 @@ class Source(Timelapse):
         :return:
         """
 
-        if isinstance(data, ndarray):
-            if self._data.dtype != data.dtype:
-                raise TypeError("Array input data must match the required type")
-        elif isinstance(data, Candle):
+        if isinstance(data, Candle):
             if self._data.dtype != Candle:
                 raise TypeError("Scalar input data must match the required type")
         elif isinstance(data, (int, StandardizedPrice)):
             if self._data.dtype != StandardizedPrice:
                 raise TypeError("Scalar input data must match the required type")
-        else:
+        elif not isinstance(data, ndarray):
             raise TypeError("Invalid input data type")
 
     def _put_and_interpolate(self, push_index, push_data):

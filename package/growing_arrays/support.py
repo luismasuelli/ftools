@@ -41,18 +41,19 @@ def fix_slicing(index, logical_length):
                         "supported")
 
 
-def fix_input(index, expected_width, expected_length, value):
+def fix_input(index, expected_width, expected_length, expected_type, value):
     """
     Checks and fixes the value according to the given index type.
     :param index: The initial index, which may be int or slice.
     :param expected_width: The expected width of the value.
     :param expected_length: The expected length of the data. It will be ignored if the index is a number.
+    :param expected_type: The expected type for array input.
     :param value: The given value, which may be scalar or array.
     :return: The fixed value, if no exception occurs.
     """
 
     if isinstance(index, slice):
-        if not isinstance(value, ndarray):
+        if not isinstance(value, ndarray) and value.dtype != expected_type:
             raise TypeError("When setting a slice, the value must be a numpy array of (stop - start)x(width) "
                             "elements (if the width is 1, an uni-dimensional array of (stop-start) elements is "
                             "also allowed)")

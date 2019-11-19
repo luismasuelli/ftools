@@ -103,7 +103,7 @@ class GrowingArray:
         """
 
         start, stop = fix_slicing(key, None)
-        value = fix_input(key, self._width, None if stop is None else stop - start, value)
+        value = fix_input(key, self._width, None if stop is None else stop - start, self._dtype, value)
         self._allocate(stop if stop is not None else (start + 1))
         self._fill(start, stop, value)
 
