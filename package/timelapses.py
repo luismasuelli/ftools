@@ -27,7 +27,7 @@ class Timelapse:
         return self._get_timestamp() + timedelta(seconds=index * int(self._interval))
 
     def index_for(self, stamp):
-        return (stamp - self._get_timestamp()).total_seconds() / int(self._interval)
+        return int((stamp - self._get_timestamp()).total_seconds()) // int(self._interval)
 
     @property
     def interval(self):
