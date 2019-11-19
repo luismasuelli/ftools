@@ -101,5 +101,5 @@ class Digest(Timelapse):
                 candle = candle.merge(source_element)
             self._data[digest_index] = candle
         self._last_read_ubound = max(self._last_read_ubound, end)
-        self._on_refresh_linked_sources.trigger(min_index, max_index)
+        self._on_refresh_linked_sources.trigger(self, min_index, max_index)
 
