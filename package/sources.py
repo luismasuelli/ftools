@@ -101,7 +101,7 @@ class Source(Timelapse):
                     max=int(delta_max * (index + 1) + previous_value.max)
                 )
 
-    def _put_nd_interpolate(self, push_index, push_data):
+    def _put_and_interpolate(self, push_index, push_data):
         """
         First, it will put the data appropriately. Then it will try an interpolation -if needed- of the data,
           considering the last index, the initial value of this frame, and the first element of the pushed data.
@@ -202,7 +202,7 @@ class Source(Timelapse):
             index = len(self)
         if index < 0:
             raise IndexError("Index to push data into cannot be negative")
-        self._put_nd_interpolate(index, data)
+        self._put_and_interpolate(index, data)
         # Arrays have length in their shape, while other elements have size=1.
         end = index + (1 if not isinstance(data, ndarray) else data.shape[0])
         self._on_refresh_digests.trigger(index, end)
