@@ -44,6 +44,7 @@ class Source(Timelapse):
         self._on_refresh_digests = Event()
         self._on_refresh_indicators = Event()
         self._linked_to = None
+        self._linked_last_read_ubound = 0
 
     def _get_timestamp(self):
         """
@@ -86,24 +87,24 @@ class Source(Timelapse):
         if isinstance(previous_value, int):
             delta = float(next_value - previous_value)/distance
             for index in range(0, distance - 1):
-                self._data[start + index] = int(delta * (index + 1) + previous_value)
+                self._data[start + index][0] = int(delta * (index + 1) + previous_value)
         elif isinstance(previous_value, Candle):
             delta_start = float(next_value.start - previous_value.start) / distance
             delta_end = float(next_value.end - previous_value.end) / distance
             delta_max = float(next_value.max - previous_value.max) / distance
             delta_min = float(next_value.min - previous_value.min) / distance
             for index in range(0, distance - 1):
-                self._data[start + index] = Candle(
+                self._data[start + index][0] = Candle(
                     start=int(delta_start * (index + 1) + previous_value.start),
                     end=int(delta_end * (index + 1) + previous_value.end),
                     min=int(delta_min * (index + 1) + previous_value.min),
                     max=int(delta_max * (index + 1) + previous_value.max)
                 )
 
-    def _interpolate_and_put(self, push_index, push_data):
+    def _put_nd_interpolate(self, push_index, push_data):
         """
-        It will try an interpolation -if needed- of the data, considering the last index, the
-          initial value of this frame, and the first element of the data to push.
+        First, it will put the data appropriately. Then it will try an interpolation -if needed- of the data,
+          considering the last index, the initial value of this frame, and the first element of the pushed data.
 
         In the end, the new data (including the interpolated, if the case) will start at index
           self._last_index+1 and will end at index (push_index + {push_data.size or 1}), not
@@ -112,23 +113,27 @@ class Source(Timelapse):
         :param push_data: The data being pushed.
         """
 
+        # Preliminary: Get the last index of data already put in this frame.
         length = len(self)
-        left_side = self._initial if length == 0 else self._data[length]
-        needs_interpolation = push_index - 1 > length
+
+        # First, performs the insertion.
         is_ndarray = isinstance(push_data, ndarray)
+        if is_ndarray:
+            self._data[push_index:push_index+push_data.shape[0]] = push_data[:]
+        else:
+            self._data[push_index] = push_data
+
+        # Check whether we need to interpolate, and do it.
+        left_side = self._initial if length == 0 else self._data[length][0]
+        needs_interpolation = push_index - 1 > length
         if needs_interpolation:
             if length == 0 and left_side is None:
                 raise RuntimeError("Cannot add data: interpolation is needed for the required index "
                                    "to push the data into, but an initial value was never set for "
                                    "this frame")
             # Performs the interpolation.
-            right_side = push_data[0] if is_ndarray else push_data
+            right_side = self._data[push_index][0] if is_ndarray else push_data
             self._interpolate(left_side, length, push_index, right_side)
-        # Performs the insertion.
-        if is_ndarray:
-            self._data[push_index:push_index+push_data.size] = push_data[:]
-        else:
-            self._data[push_index] = push_data
 
     def link(self, digest):
         """
@@ -157,6 +162,7 @@ class Source(Timelapse):
         :return:
         """
 
+        self._linked_last_read_ubound = 0
         if self._linked_to:
             self._linked_to.unregister(self._on_linked_refresh)
             self._linked_to = None
@@ -173,7 +179,11 @@ class Source(Timelapse):
         """
 
         base_index = self.index_for(digest.timestamp)
+        print("start, end, base index:", start, end, base_index)
+        start = min(start, self._linked_last_read_ubound)
+        print("start, end, base index:", start, end, base_index)
         self.push(digest[start:end], base_index + start)
+        self._linked_last_read_ubound = max(self._linked_last_read_ubound, end)
 
     def push(self, data, index=None):
         """
@@ -192,7 +202,7 @@ class Source(Timelapse):
             index = len(self)
         if index < 0:
             raise IndexError("Index to push data into cannot be negative")
-        self._interpolate_and_put(index, data)
+        self._put_nd_interpolate(index, data)
         # Arrays have length in their shape, while other elements have size=1.
         end = index + (1 if not isinstance(data, ndarray) else data.shape[0])
         self._on_refresh_digests.trigger(index, end)
