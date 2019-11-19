@@ -1,3 +1,4 @@
+from numpy import uint64
 from .events import Event
 from .pricing import Candle
 from .timelapses import Timelapse
@@ -21,12 +22,13 @@ class Digest(Timelapse):
         if source.timestamp != interval.round(source.timestamp):
             raise ValueError("Cannot create a digest for the given interval and source, since the source's start "
                              "date is not rounded to the given interval size for this digest")
-        Timelapse.__init__(self, Candle, interval, 240, 1)
+        Timelapse.__init__(self, Candle, None, interval, 240, 1)
         self._source = source
         self._source.on_refresh_digests.register(self._on_refresh)
         self._attached = True
-        self._relative_bin_size = int(interval)/int(source.interval)
+        self._relative_bin_size = int(interval) // int(source.interval)
         self._on_refresh_linked_sources = Event()
+        self._last_read_ubound = 0
 
     @property
     def source(self):
@@ -81,21 +83,23 @@ class Digest(Timelapse):
           including).
         """
 
+        start = min(start, self._last_read_ubound)
         min_index = start // self._relative_bin_size
         max_index = (end + self._relative_bin_size - 1) // self._relative_bin_size
 
         for source_index in range(start, end):
             digest_index = source_index // self._relative_bin_size
-            candle = self._data[digest_index]
-            source_element = self._source[source_index]
+            # We use indices 0 because we know the underlying array is of size 1.
+            source_element = self._source[source_index][0]
+            candle = self._data[digest_index][0] if digest_index < len(self) else None
             if candle is None:
                 if isinstance(source_element, Candle):
                     candle = source_element
-                elif isinstance(source_element, int):
+                elif isinstance(source_element, uint64):
                     candle = Candle(source_element, source_element, source_element, source_element)
             else:
                 candle = candle.merge(source_element)
             self._data[digest_index] = candle
-        self._length = max(self._length, end)
+        self._last_read_ubound = max(self._last_read_ubound, end)
         self._on_refresh_linked_sources.trigger(min_index, max_index)
 

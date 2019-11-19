@@ -10,17 +10,18 @@ class Timelapse:
       subclasses.
     """
 
-    def __init__(self, dtype, interval, chunk_size, width):
+    def __init__(self, dtype, fill_value, interval, chunk_size, width):
         """
         Creates the timelapse.
         :param dtype: The data type.
         :param interval: The interval.
         :param chunk_size: The chunk size for the underlying growing array.
         :param width: The width of each data item.
+        :param fill_value: The value to fill the empty spaces in the data when initialized.
         """
 
         self._interval = interval
-        self._data = GrowingArray(dtype, chunk_size, width)
+        self._data = GrowingArray(dtype, fill_value, chunk_size, width)
 
     def stamp_for(self, index):
         return self._get_timestamp() + timedelta(seconds=index * int(self._interval))

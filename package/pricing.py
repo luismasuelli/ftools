@@ -16,14 +16,24 @@ Prices are standardized to integer, but perhaps every price statistic has a diff
 StandardizedPrice = _uint64
 
 
-class Candle(namedtuple('BaseCandle', ('start', 'end', 'min', 'max'))):
+class Candle:
     """
     Japanese candles span over intervals and keep a detail of start, end, min and max (standarized)
       prices of an asset in a (somehow neutral or reference) currency.
     """
 
+    __slots__ = ('start', 'end', 'min', 'max')
+
+    def __new__(cls, start, min, max, end):
+        obj = super(Candle, cls).__new__(cls)
+        obj.start = start
+        obj.end = end
+        obj.min = min
+        obj.max = max
+        return obj
+
     def merge(self, price):
-        if isinstance(price, int):
+        if isinstance(price, (int, _uint64)):
             return Candle(start=self.start, end=price, min=min(self.min, price), max=max(self.max, price))
         elif isinstance(price, Candle):
             return Candle(start=min(self.start, price.start), end=max(self.start, price.start),

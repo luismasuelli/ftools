@@ -38,7 +38,7 @@ class Source(Timelapse):
                 raise TypeError("For pricing.StandardizedPrice type, the initial value must be integer")
             elif dtype == Candle and not isinstance(initial, Candle):
                 raise TypeError("For pricing.Candle type, the initial value must be a candle instance")
-        Timelapse.__init__(self, dtype, interval, 3600, 1)
+        Timelapse.__init__(self, dtype, None if dtype == Candle else 0, interval, 3600, 1)
         self._timestamp = stamp
         self._initial = initial
         self._on_refresh_digests = Event()

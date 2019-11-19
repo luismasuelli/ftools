@@ -1,4 +1,4 @@
-from numpy import array, zeros
+from numpy import zeros, full
 from .support import chunked_slicing, fix_slicing, fix_input
 
 
@@ -14,7 +14,7 @@ class GrowingArray:
     In any case, negative indices are NOT supported, and steps different to 1 in slices are neither.
     """
 
-    def __init__(self, dtype, chunk_size=3600, width=1):
+    def __init__(self, dtype, fill_value, chunk_size=3600, width=1):
         if chunk_size < 4:
             raise ValueError("Chunk size cannot be lower than 60")
         if width < 1:
@@ -22,6 +22,7 @@ class GrowingArray:
         self._chunks = []
         self._dtype = dtype
         self._chunk_size = chunk_size
+        self._fill_value = fill_value
         self._width = width
         self._length = 0
 
@@ -70,7 +71,8 @@ class GrowingArray:
         if stop > total_allocated:
             new_bins = (stop + self._chunk_size - 1)//self._chunk_size - chunks_count
             for _ in range(0, new_bins):
-                self._chunks.append(zeros((self._chunk_size, self._width), dtype=self._dtype))
+                arr = full((self._chunk_size, self._width), dtype=self._dtype, fill_value=self._fill_value)
+                self._chunks.append(arr)
         self._length = max(self._length, stop)
 
     def _fill(self, start, stop, data):
