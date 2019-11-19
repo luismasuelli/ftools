@@ -140,6 +140,8 @@ class Source(Timelapse):
         """
 
         self.unlink()
+        if self._data.dtype != Candle:
+            raise ValueError("This frame does not use Candle type, so it cannot connect to a digest")
         if digest.timestamp < self._timestamp:
             raise ValueError("The date of the digest attempted to link to is lower than this frame's date")
         if digest.interval < self.interval:
@@ -155,8 +157,9 @@ class Source(Timelapse):
         :return:
         """
 
-        self._linked_to.unregister(self._on_linked_refresh)
-        self._linked_to = None
+        if self._linked_to:
+            self._linked_to.unregister(self._on_linked_refresh)
+            self._linked_to = None
 
     def _on_linked_refresh(self, digest, start, end):
         """
