@@ -72,6 +72,24 @@ class Digest(Timelapse):
 
         return self._on_refresh_linked_sources
 
+    def _make_candle(self, source_elements):
+        """
+        Makes a candle out of the given source elements, either by summarizing integers, or candles.
+        :param source_elements: The elements to merge into one candle.
+        :return: The candle with the merged elements.
+        """
+
+        candle = None
+        for source_element in source_elements:
+            if candle is None:
+                if isinstance(source_element, uint64):
+                    candle = Candle(source_element, source_element, source_element, source_element)
+                elif isinstance(source_element, Candle):
+                    candle = source_element
+            else:
+                candle = candle.merge(source_element)
+        return candle
+
     def _on_refresh(self, start, end):
         """
         Updates the current digest given its data. It will give the last index the digest will
@@ -87,18 +105,13 @@ class Digest(Timelapse):
         min_index = start // self._relative_bin_size
         max_index = (end + self._relative_bin_size - 1) // self._relative_bin_size
 
-        for source_index in range(start, end):
-            digest_index = source_index // self._relative_bin_size
+        for digest_index in range(min_index, max_index):
+            source_index = digest_index * self._relative_bin_size
             # We use indices 0 because we know the underlying array is of size 1.
-            source_element = self._source[source_index][0]
-            candle = self._data[digest_index][0] if digest_index < len(self) else None
-            if candle is None:
-                if isinstance(source_element, Candle):
-                    candle = source_element
-                elif isinstance(source_element, uint64):
-                    candle = Candle(source_element, source_element, source_element, source_element)
-            else:
-                candle = candle.merge(source_element)
+            # From the source, we get a chunk of the relative size. Either a linear
+            # array of integers, or a linear array of candles.
+            # Now, make the candle out of the elements
+            candle = self._make_candle(self._source[source_index:source_index+self._relative_bin_size][:, 0])
             self._data[digest_index] = candle
         self._last_read_ubound = max(self._last_read_ubound, end)
         self._on_refresh_linked_sources.trigger(self, min_index, max_index)
