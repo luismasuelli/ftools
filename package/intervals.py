@@ -28,7 +28,7 @@ class Interval(IntEnum):
         Tells whether this interval can be used in a source frame.
         """
 
-        return self in (self.SECOND, self.MINUTE, self.MINUTE5, self.MINUTE30, self.HOUR)
+        return self != Interval.DAY
 
     def allowed_as_digest(self, for_source_interval=SECOND):
         """
@@ -37,9 +37,9 @@ class Interval(IntEnum):
         :param for_source_interval: The source frame size to compare.
         """
 
-        return self in (self.MINUTE, self.MINUTE5, self.MINUTE10, self.MINUTE15, self.MINUTE20,
-                        self.MINUTE30, self.HOUR, self.HOUR2, self.HOUR3, self.HOUR4) and\
-               int(self) > int(for_source_interval)
+        iself = int(self)
+        ifor = int(for_source_interval)
+        return iself % ifor == 0 and iself > ifor
 
     def round(self, stamp):
         """
