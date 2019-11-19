@@ -64,9 +64,10 @@ def fix_input(index, expected_width, expected_length, value):
                             "elements (if the width is 1, an uni-dimensional array of (stop-start) elements is "
                             "also allowed)")
     elif isinstance(index, int):
-        if expected_width > 1 and not isinstance(value, ndarray):
-            raise TypeError("When setting an index, the value must not be a numpy array if the width is > 1")
-        if expected_width == 1 and isinstance(value, int):
+        if expected_width > 1 and (not isinstance(value, ndarray) or value.shape != (expected_width,)):
+            raise TypeError("When setting an index, the value must be a 1-dimensional numpy array of the appropriate "
+                            "size (=width), if the expected width is > 1")
+        if expected_width == 1 and not isinstance(value, ndarray):
             value = array((value,))
     else:
         raise TypeError("Only slices (non-negative, growing, and with step 1) or non-negative integer indices are "
