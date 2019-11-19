@@ -149,7 +149,7 @@ class Source(Timelapse):
         self._linked_to = digest.on_refresh_linked_sources
         self._linked_to.register(self._on_linked_refresh)
         # Force the first refresh.
-        self._on_linked_refresh(digest.timestamp, 0, len(digest))
+        self._on_linked_refresh(digest, 0, len(digest))
 
     def unlink(self):
         """
