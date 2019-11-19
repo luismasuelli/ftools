@@ -32,6 +32,10 @@ class Candle:
         obj.max = max
         return obj
 
+    @classmethod
+    def constant(cls, value):
+        return Candle(value, value, value, value)
+
     def merge(self, price):
         if isinstance(price, (int, _uint64)):
             return Candle(start=self.start, end=price, min=min(self.min, price), max=max(self.max, price))
