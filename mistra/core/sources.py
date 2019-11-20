@@ -1,3 +1,4 @@
+import warnings
 from numpy import ndarray, dtype, uint64
 from .timelapses import Timelapse
 from .events import Event
@@ -142,6 +143,7 @@ class Source(Timelapse):
         left_side = self._initial if length == 0 else self._data[length][0]
         needs_interpolation = push_index - 1 > length
         if needs_interpolation:
+            warnings.warn("Data is being added at sparse times! It may produce misleading interpolated data.")
             if length == 0 and left_side is None:
                 raise RuntimeError("Cannot add data: interpolation is needed for the required index "
                                    "to push the data into, but an initial value was never set for "
