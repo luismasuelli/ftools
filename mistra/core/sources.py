@@ -16,9 +16,12 @@ class Source(Timelapse):
       padding or interpolation in the frame data.
 
     When data is added, it will refresh two types of related (derived) frames:
-      - Digests of the current frame.
       - Indicators of this frame.
+      - Linked frames (to the current frame - they digest the data).
     """
+
+    class InterpolationWarning(Warning):
+        pass
 
     def __init__(self, dtype, stamp, interval, initial=None):
         """
@@ -143,7 +146,8 @@ class Source(Timelapse):
         left_side = self._initial if length == 0 else self._data[length][0]
         needs_interpolation = push_index - 1 > length
         if needs_interpolation:
-            warnings.warn("Data is being added at sparse times! It may produce misleading interpolated data.")
+            warnings.warn(self.InterpolationWarning("Data is being added at sparse times! It may produce misleading "
+                                                    "interpolated data."))
             if length == 0 and left_side is None:
                 raise RuntimeError("Cannot add data: interpolation is needed for the required index "
                                    "to push the data into, but an initial value was never set for "
@@ -180,7 +184,7 @@ class Source(Timelapse):
 
     def unlink(self):
         """
-        Unlinks this frame from its currently linked digest.
+        Unlinks this frame from its currently linked source.
         :return:
         """
 
@@ -215,8 +219,8 @@ class Source(Timelapse):
           it has also be taken into account the start date to use as offset for the
           start and end indices.
         :param source: The linked source.
-        :param start: The start index, in the digest, of the updated data.
-        :param end: The end index (not including), in the digest, of the updated data.
+        :param start: The start index, in the source, of the updated data.
+        :param end: The end index (not including), in the source, of the updated data.
         """
 
         base_index = self.index_for(source.timestamp)
