@@ -66,6 +66,11 @@ class Source(Timelapse):
         """
         Causes an interpolation of data in certain index range, and considering
           boundary values.
+
+        IT IS ACTUALLY A BAD PRACTICE TO HAVE TO INTERPOLATE DATA AND
+        WILL LEAD TO MISLEADING RESULTS. Perhaps in a future I'm updating
+        this part, but even there, it is a bad practice.
+
         :param previous_value: The left-side value.
         :param start: The start index.
         :param end: The end index (not included).
