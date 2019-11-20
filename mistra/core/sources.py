@@ -1,4 +1,4 @@
-from numpy import ndarray, dtype
+from numpy import ndarray, dtype, uint64
 from .timelapses import Timelapse
 from .events import Event
 from .pricing import StandardizedPrice, Candle
@@ -41,10 +41,11 @@ class Source(Timelapse):
         Timelapse.__init__(self, dtype, None if dtype == Candle else 0, interval, 3600, 1)
         self._timestamp = stamp
         self._initial = initial
-        self._on_refresh_digests = Event()
+        self._on_refresh_linked_sources = Event()
         self._on_refresh_indicators = Event()
         self._linked_to = None
         self._linked_last_read_ubound = 0
+        self._linked_relative_bin_size = 0
 
     def _get_timestamp(self):
         """
@@ -60,14 +61,6 @@ class Source(Timelapse):
         """
 
         return self._on_refresh_indicators
-
-    @property
-    def on_refresh_digests(self):
-        """
-        Digests will connect to this event to refresh themselves when more data is added.
-        """
-
-        return self._on_refresh_digests
 
     def _interpolate(self, previous_value, start, end, next_value):
         """
@@ -152,26 +145,31 @@ class Source(Timelapse):
             right_side = self._data[push_index][0] if is_ndarray else push_data
             self._interpolate(left_side, length, push_index, right_side)
 
-    def link(self, digest):
+    def link(self, source):
         """
-        Links this frame to another digest, so data can be updated from it into this frame's data.
-        It is an error to link to a digest with a different interval size or a LOWER date: frames can
-          only link to digests with a greater date (and back-fill positions in previous time stamps).
-        Linking to a digest will automatically unlink from the previous digest, if any.
-        :param digest: The digest to link to.
+        Links this frame to another source, so data can be updated from it into this frame's data.
+        It is an error to link to a source with a different interval size or a LOWER date: frames can
+          only link to source with a greater date (and back-fill positions in previous time stamps).
+        Linking to a source will automatically unlink from the previous source, if any.
+        :param source: The source to link to.
         """
 
         self.unlink()
         if self._data.dtype != Candle:
-            raise ValueError("This frame does not use Candle type, so it cannot connect to a digest")
-        if digest.timestamp < self._timestamp:
-            raise ValueError("The date of the digest attempted to link to is lower than this frame's date")
-        if digest.interval < self.interval:
-            raise ValueError("The digest to link to must have the same interval of this frame")
-        self._linked_to = digest.on_refresh_linked_sources
+            raise ValueError("This frame does not use Candle type, so it cannot connect to a source")
+        if source.timestamp < self._timestamp:
+            raise ValueError("The date of the source attempted to link to is lower than this frame's date")
+        if int(source.interval) > int(self.interval):
+            raise ValueError("The source to link to must have a lower interval than this frame")
+        if int(self.interval) % int(source.interval) != 0:
+            raise ValueError("The source's interval is not an exact divisor of this frame's interval")
+        if self.interval.round(source.timestamp) != source.timestamp:
+            raise ValueError("The specified source has not a date that is aligned to this frame's interval")
+        self._linked_to = source._on_refresh_linked_sources
         self._linked_to.register(self._on_linked_refresh)
+        self._linked_relative_bin_size = int(self.interval) // int(source.interval)
         # Force the first refresh.
-        self._on_linked_refresh(digest, 0, len(digest))
+        self._on_linked_refresh(source, 0, len(source))
 
     def unlink(self):
         """
@@ -180,25 +178,57 @@ class Source(Timelapse):
         """
 
         self._linked_last_read_ubound = 0
+        self._linked_relative_bin_size = 0
         if self._linked_to:
             self._linked_to.unregister(self._on_linked_refresh)
             self._linked_to = None
 
-    def _on_linked_refresh(self, digest, start, end):
+    def _make_candle(self, source_elements):
         """
-        Handles an update from the linked digest considering start date and boundaries.
+        Makes a candle out of the given source elements, either by summarizing integers, or candles.
+        :param source_elements: The elements to merge into one candle.
+        :return: The candle with the merged elements.
+        """
+
+        candle = None
+        for source_element in source_elements:
+            if candle is None:
+                if isinstance(source_element, uint64):
+                    candle = Candle(source_element, source_element, source_element, source_element)
+                elif isinstance(source_element, Candle):
+                    candle = source_element
+            else:
+                candle = candle.merge(source_element)
+        return candle
+
+    def _on_linked_refresh(self, source, start, end):
+        """
+        Handles an update from the linked source considering start date and boundaries.
         It is guaranteed that boundaries will be in the same scale of this frame, but
           it has also be taken into account the start date to use as offset for the
           start and end indices.
-        :param digest: The linked digest.
+        :param source: The linked source.
         :param start: The start index, in the digest, of the updated data.
         :param end: The end index (not including), in the digest, of the updated data.
         """
 
-        base_index = self.index_for(digest.timestamp)
+        base_index = self.index_for(source.timestamp)
         start = min(start, self._linked_last_read_ubound)
-        self.push(digest[start:end], base_index + start)
+        min_index = start // self._linked_relative_bin_size
+        max_index = (end + self._linked_relative_bin_size - 1) // self._linked_relative_bin_size
+
+        for digest_index in range(min_index, max_index):
+            source_index = digest_index * self._linked_relative_bin_size
+            # We use indices 0 because we know the underlying array is of size 1.
+            # From the source, we get a chunk of the relative size. Either a linear
+            # array of integers, or a linear array of candles.
+            # Now, make the candle out of the elements
+            candle = self._make_candle(source._data[source_index:source_index+self._linked_relative_bin_size][:, 0])
+            self._data[digest_index + base_index] = candle
         self._linked_last_read_ubound = max(self._linked_last_read_ubound, end)
+        # Indicators, and linked frames, of this source frame must also be notified, like in push.
+        self._on_refresh_indicators.trigger(self, min_index + base_index, max_index + base_index)
+        self._on_refresh_linked_sources.trigger(self, min_index + base_index, max_index + base_index)
 
     def push(self, data, index=None):
         """
@@ -221,5 +251,5 @@ class Source(Timelapse):
         self._put_and_interpolate(index, data)
         # Arrays have length in their shape, while other elements have size=1.
         end = index + (1 if not isinstance(data, ndarray) else data.shape[0])
-        self._on_refresh_digests.trigger(index, end)
-        self._on_refresh_indicators.trigger(index, end)
+        self._on_refresh_linked_sources.trigger(self, index, end)
+        self._on_refresh_indicators.trigger(self, index, end)
