@@ -16,3 +16,12 @@ class Event:
     def trigger(self, *args, **kwargs):
         for callback in self._callbacks:
             callback(*args, **kwargs)
+
+    def listeners(self):
+        """
+        Iterates over all the registered listener methods and their
+          bound receivers.
+        :return: A generator.
+        """
+        for callback in self._callbacks:
+            yield callback, getattr(callback, '__self__', None)
