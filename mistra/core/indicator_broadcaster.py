@@ -19,7 +19,6 @@ class IndicatorBroadcaster:
 
         return self._on_refresh_indicators
 
-
     @property
     def source(self):
         """
