@@ -4,7 +4,7 @@ from .events import Event
 class IndicatorBroadcaster:
     """
     It can register indicators and also provide a way to notify them regarding changes in
-      data.
+      data. In the same way, provides a mean to return its own data.
     """
 
     def __init__(self, source):
@@ -26,3 +26,10 @@ class IndicatorBroadcaster:
         """
 
         return self._source
+
+    def __getitem__(self, item):
+        """
+        Gets underlying data from this broadcaster.
+        """
+
+        raise NotImplementedError
