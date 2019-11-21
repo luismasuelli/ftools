@@ -1,4 +1,4 @@
-from numpy import zeros, full
+from numpy import zeros, full, ndarray
 from .support import chunked_slicing, fix_slicing, fix_input
 
 
@@ -103,9 +103,14 @@ class GrowingArray:
         """
 
         start, stop = fix_slicing(key, None)
-        value = fix_input(key, self._width, None if stop is None else stop - start, self._dtype, value)
+        if stop is None:
+            stop = max(self._length, start)
+        if start is None:
+            start = 0
+        value = fix_input(key, self._width, stop - start, self._dtype, value)
         self._allocate(stop if stop is not None else (start + 1))
-        self._fill(start, stop, value)
+        if start > stop:
+            self._fill(start, stop, value)
 
     def __repr__(self):
         return "GrowingArray(%s)" % ', '.join(str(chunk) for chunk in self._chunks)
