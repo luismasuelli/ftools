@@ -1,6 +1,3 @@
-from collections import namedtuple
-from numpy import uint64 as _uint64
-
 """
 Defined both the standardized price and the japanese candle. The japanese candle holds
   a range of values for a certain time lapse, stating its minimum, maximum, start and
@@ -11,6 +8,10 @@ Prices are standardized to integer, but perhaps every price statistic has a diff
   digits of scaling for their floats. Those cases are converted to integers (e.g. by zero-pad
   and then point-removal).
 """
+
+
+from collections import namedtuple
+from numpy import uint64 as _uint64
 
 
 StandardizedPrice = _uint64

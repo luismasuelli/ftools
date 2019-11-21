@@ -44,7 +44,7 @@ class Source(Timelapse, IndicatorBroadcaster):
             elif dtype == Candle and not isinstance(initial, Candle):
                 raise TypeError("For pricing.Candle type, the initial value must be a candle instance")
         Timelapse.__init__(self, dtype, None if dtype == Candle else 0, interval, 3600, 1)
-        IndicatorBroadcaster.__init__(self)
+        IndicatorBroadcaster.__init__(self, self)
         self._timestamp = stamp
         self._initial = initial
         self._on_refresh_linked_sources = Event()
