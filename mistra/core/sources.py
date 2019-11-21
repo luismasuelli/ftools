@@ -1,11 +1,12 @@
 import warnings
-from numpy import ndarray, dtype, uint64
+from numpy import ndarray, uint64
 from .timelapses import Timelapse
 from .events import Event
 from .pricing import StandardizedPrice, Candle
+from .indicator_broadcaster import IndicatorBroadcaster
 
 
-class Source(Timelapse):
+class Source(Timelapse, IndicatorBroadcaster):
     """
     Source frames are the origin of the data. Internally, they are organized as a sequence of indexed prices
       or candles (depending on the required type: standardized price or candle).
@@ -43,10 +44,10 @@ class Source(Timelapse):
             elif dtype == Candle and not isinstance(initial, Candle):
                 raise TypeError("For pricing.Candle type, the initial value must be a candle instance")
         Timelapse.__init__(self, dtype, None if dtype == Candle else 0, interval, 3600, 1)
+        IndicatorBroadcaster.__init__(self)
         self._timestamp = stamp
         self._initial = initial
         self._on_refresh_linked_sources = Event()
-        self._on_refresh_indicators = Event()
         self._linked_to = None
         self._linked_last_read_ubound = 0
         self._linked_relative_bin_size = 0
