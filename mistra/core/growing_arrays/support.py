@@ -20,9 +20,9 @@ def fix_slicing(index, logical_length):
             stop = logical_length
         if step and step != 1:
             raise KeyError("Slices with step != 1 are not supported")
-        if start < 0 or stop < 0:
+        if start < 0 or (stop is not None and stop < 0):
             raise KeyError("Negative indices in slices are not supported")
-        if stop < start:
+        if stop is not None and stop < start:
             raise KeyError("Slices must have start <= stop indices")
         elif logical_length is None:
             return start, stop
