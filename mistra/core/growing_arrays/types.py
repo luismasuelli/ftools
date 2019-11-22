@@ -103,13 +103,14 @@ class GrowingArray:
         """
 
         start, stop = fix_slicing(key, None)
-        if stop is None:
-            stop = max(self._length, start)
-        if start is None:
-            start = 0
-        value = fix_input(key, self._width, stop - start, self._dtype, value)
-        self._allocate(stop if stop is not None else (start + 1))
-        if start > stop:
+        if stop is not None:
+            value = fix_input(key, self._width, stop - start, self._dtype, value)
+            self._allocate(stop)
+            if stop > start:
+                self._fill(start, stop, value)
+        else:
+            value = fix_input(key, self._width, 1, self._dtype, value)
+            self._allocate(start + 1)
             self._fill(start, stop, value)
 
     def __repr__(self):
