@@ -4,7 +4,7 @@ from mistra.core.sources import Source
 from mistra.core.intervals import Interval
 from mistra.core.pricing import Candle
 from mistra.core.indicators import Indicator
-from mistra.core.indicators.moving import MovingMean
+from mistra.core.indicators.moving import MovingMean, MovingVariance
 
 
 class Identity(Indicator):
@@ -50,7 +50,11 @@ print(source[:])
 identity = Identity(source)
 movmean2 = MovingMean(source, 2)
 merger = Merger(movmean2, identity)
+variance = MovingVariance(movmean2, var=True, stderr=True, unbiased=True)
+
+source.push(array(list(Candle.constant(v) for v in (100, 200, 300, 400, 500)), dtype=Candle))
 
 print("identity:", identity[:])
 print("moving mean:", movmean2[:])
 print("merger", merger[:])
+print("varnace", variance[:])
