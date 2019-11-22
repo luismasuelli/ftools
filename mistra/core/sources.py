@@ -67,6 +67,14 @@ class Source(Timelapse, IndicatorBroadcaster):
 
         return self._on_refresh_indicators
 
+    @property
+    def dtype(self):
+        """
+        The underlying type of this source frame.
+        """
+
+        return self._data.dtype
+
     def _interpolate(self, previous_value, start, end, next_value):
         """
         Causes an interpolation of data in certain index range, and considering
