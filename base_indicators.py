@@ -1,9 +1,10 @@
-from numpy import uint64, array, empty, NaN
-from datetime import datetime, timedelta
+from numpy import array, empty
+from datetime import datetime
 from mistra.core.sources import Source
 from mistra.core.intervals import Interval
-from mistra.core.pricing import StandardizedPrice, Candle
+from mistra.core.pricing import Candle
 from mistra.core.indicators import Indicator
+from mistra.core.indicators.moving import MovingMean
 
 
 class Identity(Indicator):
@@ -16,29 +17,7 @@ class Identity(Indicator):
         return 1
 
     def _update(self, start, end):
-        print("Updating indices %d:%d in identity" % (start, end))
-        self._data[start:end] = self._bc_source[start:end]
-
-
-class MovingMean(Indicator):
-
-    def __init__(self, source, tail):
-        self._bc_source = source
-        self._tail = min(tail, 2)
-        Indicator.__init__(self, source)
-
-    def width(self):
-        return 1
-
-    def _update(self, start, end):
-        print("Updating indices %d:%d in moving mean[%d]" % (start, end, self._tail))
-        for idx in range(start, end):
-            tail_start = idx+1-self._tail
-            tail_end = idx+1
-            if tail_start < 0:
-                self._data[tail_end - 1] = NaN
-            else:
-                self._data[tail_end - 1] = self._bc_source[tail_start:tail_end].sum() / self._tail
+        self._data[start:end] = self._map(self._bc_source[start:end], function=lambda row: row[0].start, dtype=float)
 
 
 class Merger(Indicator):
@@ -52,7 +31,6 @@ class Merger(Indicator):
         return 2
 
     def _update(self, start, end):
-        print("Updating indices %d:%d in merger" % (start, end))
         data = empty((end - start, self.width()), dtype=float)
         data[:, 0] = self._bc_identity[start:end][:, 0]
         data[:, 1] = self._bc_mmean[start:end][:, 0]
@@ -63,9 +41,9 @@ class Merger(Indicator):
 today = Interval.DAY.round(datetime.now())
 
 
-source = Source(StandardizedPrice, today, Interval.HOUR, initial=1)
-source.push(array((2, 4, 6, 8, 10, 12, 14), dtype=uint64), index=4)
-source.push(array((16, 18, 20, 22), dtype=uint64))
+source = Source(Candle, today, Interval.HOUR, initial=Candle.constant(0))
+source.push(array(list(Candle.constant(v) for v in (2, 4, 6, 8, 10, 12, 14)), dtype=Candle), index=4)
+source.push(array(list(Candle.constant(v) for v in (16, 18, 20, 22)), dtype=Candle))
 print(source[:])
 
 

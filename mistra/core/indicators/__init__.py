@@ -26,7 +26,7 @@ A quite complex network of indicators may be used. For example: One single movin
 """
 
 
-from numpy import float_, NaN
+from numpy import float_, NaN, array
 from ..growing_arrays import GrowingArray
 from ..indicator_broadcaster import IndicatorBroadcaster
 
@@ -41,7 +41,6 @@ class Indicator(IndicatorBroadcaster):
     def __init__(self, *broadcasters):
         broadcasters = set(broadcasters)
         sources = set(broadcaster.source for broadcaster in broadcasters)
-        print(broadcasters, sources)
         if len(sources) != 1:
             raise ValueError("Indicators must receive at least a source and/or several other indicators, and "
                              "all the given input arguments must have the same source")
@@ -55,6 +54,19 @@ class Indicator(IndicatorBroadcaster):
             broadcaster.on_refresh_indicators.register(self._on_dependency_update)
         for broadcaster in broadcasters:
             self._on_dependency_update(broadcaster, 0, len(broadcaster))
+
+    def _map(self, data, function, dtype):
+        """
+        Maps a bi-dimensional array into another bi-dimensional array, perhaps of different
+          width, given a mapping function and its dtype
+        :param data: The data to use as map source.
+        :param function: The function used to map the data.
+        :param dtype: The dtype for the new array.
+        :return: A new array with the mapped data.
+        """
+
+        mapped = list(function(data[idx, :]) for idx in range(data.shape[0]))
+        return array(mapped, dtype=dtype)
 
     def width(self):
         """
