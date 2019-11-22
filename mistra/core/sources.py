@@ -228,7 +228,6 @@ class Source(Timelapse, IndicatorBroadcaster):
         start = min(start, self._linked_last_read_ubound)
         min_index = start // self._linked_relative_bin_size
         max_index = (end + self._linked_relative_bin_size - 1) // self._linked_relative_bin_size
-
         for digest_index in range(min_index, max_index):
             source_index = digest_index * self._linked_relative_bin_size
             # We use indices 0 because we know the underlying array is of size 1.
