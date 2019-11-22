@@ -27,8 +27,8 @@ A quite complex network of indicators may be used. For example: One single movin
 
 
 from numpy import float_, NaN
-from .growing_arrays import GrowingArray
-from .indicator_broadcaster import IndicatorBroadcaster
+from ..growing_arrays import GrowingArray
+from ..indicator_broadcaster import IndicatorBroadcaster
 
 
 class Indicator(IndicatorBroadcaster):
