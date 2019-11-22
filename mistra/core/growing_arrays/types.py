@@ -15,9 +15,9 @@ class GrowingArray:
     """
 
     def __init__(self, dtype, fill_value, chunk_size=3600, width=1):
-        if chunk_size < 4:
+        if not isinstance(chunk_size, int) or chunk_size < 4:
             raise ValueError("Chunk size cannot be lower than 60")
-        if width < 1:
+        if not isinstance(width, int) or width < 1:
             raise ValueError("Width cannot be lower than 1")
         self._chunks = []
         self._dtype = dtype
