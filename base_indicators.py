@@ -12,7 +12,7 @@ class Identity(Indicator):
         self._bc_source = source
         Indicator.__init__(self, source)
 
-    def _width(self):
+    def width(self):
         return 1
 
     def _update(self, start, end):
@@ -27,7 +27,7 @@ class MovingMean(Indicator):
         self._tail = min(tail, 2)
         Indicator.__init__(self, source)
 
-    def _width(self):
+    def width(self):
         return 1
 
     def _update(self, start, end):
@@ -48,12 +48,12 @@ class Merger(Indicator):
         self._bc_identity = identity
         Indicator.__init__(self, mmean, identity)
 
-    def _width(self):
+    def width(self):
         return 2
 
     def _update(self, start, end):
         print("Updating indices %d:%d in merger" % (start, end))
-        data = empty((end - start, self._width()), dtype=float)
+        data = empty((end - start, self.width()), dtype=float)
         data[:, 0] = self._bc_identity[start:end][:, 0]
         data[:, 1] = self._bc_mmean[start:end][:, 0]
         print(data.shape)

@@ -49,14 +49,14 @@ class Indicator(IndicatorBroadcaster):
         self._max_requested_start = {broadcaster: 0 for broadcaster in broadcasters}
         self._max_requested_end = {broadcaster: 0 for broadcaster in broadcasters}
         self._disposed = False
-        self._data = GrowingArray(float_, NaN, 3600, self._width())
+        self._data = GrowingArray(float_, NaN, 3600, self.width())
         # Trigger first refresh
         for broadcaster in broadcasters:
             broadcaster.on_refresh_indicators.register(self._on_dependency_update)
         for broadcaster in broadcasters:
             self._on_dependency_update(broadcaster, 0, len(broadcaster))
 
-    def _width(self):
+    def width(self):
         """
         The width of this indicator's data.
         """
