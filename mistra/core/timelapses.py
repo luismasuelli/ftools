@@ -1,4 +1,4 @@
-from datetime import timedelta
+from datetime import timedelta, date, datetime
 from .growing_arrays import GrowingArray
 
 
@@ -50,11 +50,22 @@ class Timelapse:
 
     def __getitem__(self, item):
         """
-        Gets values from the underlying array.
+        Gets values from the underlying array. It is also allowed to use timestamps instead of
+          indices: they will be converted (by truncation/alignment) to the appropriate indices.
         :param item: The item (index or slice) to use to get the data from the underlying array.
         :return:
         """
 
+        if isinstance(item, (date, datetime)):
+            item = self.index_for(item)
+        elif isinstance(item, slice):
+            start = item.start
+            stop = item.stop
+            if isinstance(start, (date, datetime)):
+                start = self.index_for(start)
+            if isinstance(stop, (date, datetime)):
+                stop = self.index_for(stop)
+            item = slice(start, stop, item.step)
         return self._data[item][:]
 
     def __len__(self):
