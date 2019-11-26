@@ -9,7 +9,7 @@ today = Interval.DAY.round(datetime.now())
 
 
 source = Source(StandardizedPrice, today, Interval.HOUR, initial=1)
-source.push(array((2, 4, 6, 8, 10, 12, 14), dtype=uint64), index=4)
+source.push(array((2, 4, 6, 8, 10, 12, 14), dtype=uint64), index=today + timedelta(hours=4))
 source.push(array((16, 18, 20, 22), dtype=uint64))
 print(source[:])
 

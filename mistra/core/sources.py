@@ -1,4 +1,6 @@
 import warnings
+from datetime import date, datetime
+
 from numpy import ndarray, uint64
 from .timelapses import Timelapse
 from .events import Event
@@ -264,8 +266,16 @@ class Source(Timelapse, IndicatorBroadcaster):
 
         if index is None:
             index = len(self)
-        if index < 0:
-            raise IndexError("Index to push data into cannot be negative")
+        elif isinstance(index, (date, datetime)):
+            index = self.index_for(index)
+        elif isinstance(index, slice):
+            start = index.start
+            stop = index.stop
+            if isinstance(start, (date, datetime)):
+                start = self.index_for(start)
+            if isinstance(stop, (date, datetime)):
+                stop = self.index_for(stop)
+            index = slice(start, stop, index.step)
         self._check_input_matching_types(data)
         self._put_and_interpolate(index, data)
         # Arrays have length in their shape, while other elements have size=1.
