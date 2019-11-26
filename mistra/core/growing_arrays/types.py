@@ -30,6 +30,10 @@ class GrowingArray:
     def dtype(self):
         return self._dtype
 
+    @property
+    def width(self):
+        return self._width
+
     def __getitem__(self, item):
         """
         Gets an element, or a numpy array of elements, given the index or slice.
