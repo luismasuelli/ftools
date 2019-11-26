@@ -66,7 +66,15 @@ class Timelapse:
             if isinstance(stop, (date, datetime)):
                 stop = self.index_for(stop)
             item = slice(start, stop, item.step)
-        return self._data[item][:]
+        result = self._data[item][:]
+        if isinstance(item, slice):
+            # Flattening this array to be 1-dimensional, since now it is
+            #   of shape (size, 1).
+            result.shape = (result.shape[0],)
+        else:
+            # It is am array with just 1 element! Just extract it.
+            result = result[0]
+        return result
 
     def __len__(self):
         return len(self._data)

@@ -17,6 +17,8 @@ print(source[today:])
 linked = Source(Candle, today - timedelta(hours=8), Interval.HOUR2, initial=Candle.constant(0))
 linked.link(source)
 print(linked[:])
+print(linked[4])
+print(linked[today])
 linked.push(array(tuple(Candle.constant(v) for v in (30, 31, 32, 33)), dtype=Candle), 0)
 print(linked[:])
 
