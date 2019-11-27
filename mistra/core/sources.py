@@ -77,6 +77,15 @@ class Source(Timelapse, IndicatorBroadcaster):
 
         return self._data.dtype
 
+    @property
+    def initial(self):
+        """
+        The initial value of this source frame. When provided, this value is the last
+          price (either StandardizedPrice or Candle) from the last period.
+        """
+
+        return self._initial
+
     def _interpolate(self, previous_value, start, end, next_value):
         """
         Causes an interpolation of data in certain index range, and considering
