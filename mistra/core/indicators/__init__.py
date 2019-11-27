@@ -55,19 +55,6 @@ class Indicator(IndicatorBroadcaster):
         for broadcaster in broadcasters:
             self._on_dependency_update(broadcaster, 0, len(broadcaster))
 
-    def _map(self, data, function, dtype):
-        """
-        Maps a bi-dimensional array into another bi-dimensional array, perhaps of different
-          width, given a mapping function and its dtype
-        :param data: The data to use as map source.
-        :param function: The function used to map the data.
-        :param dtype: The dtype for the new array.
-        :return: A new array with the mapped data.
-        """
-
-        mapped = list(function(data[idx, :]) for idx in range(data.shape[0]))
-        return array(mapped, dtype=dtype)
-
     def width(self):
         """
         The width of this indicator's data.
@@ -150,3 +137,16 @@ class Indicator(IndicatorBroadcaster):
         """
 
         raise NotImplemented
+
+    def _map(self, data, function, dtype):
+        """
+        Maps a bi-dimensional array into another bi-dimensional array, perhaps of different
+          width, given a mapping function and its dtype
+        :param data: The data to use as map source.
+        :param function: The function used to map the data.
+        :param dtype: The dtype for the new array.
+        :return: A new array with the mapped data.
+        """
+
+        mapped = list(function(data[idx, :]) for idx in range(data.shape[0]))
+        return array(mapped, dtype=dtype)
