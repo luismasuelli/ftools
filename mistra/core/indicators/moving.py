@@ -48,7 +48,7 @@ class MovingMean(Indicator):
         :param end: The end index to update.
         """
 
-        data = self._parent[max(0, start + 1 - self._tail_size):end]
+        data = self._tail_slice(self._parent, start, end, self._tail_size)
         if self._candle_component:
             data = self._map(data, lambda c: getattr(c[0], self._candle_component), float)
 
@@ -130,7 +130,7 @@ class MovingVariance(Indicator):
         print("Means shape:", means.shape)
 
         tail_size = self._moving_mean.tail_size
-        values = self._moving_mean.parent[max(0, start + 1 - tail_size):end]
+        values = self._tail_slice(self._moving_mean.parent, start, end, tail_size)
         ccmp = self._moving_mean.candle_component
         if self._moving_mean.candle_component:
             values = self._map(values, lambda c: getattr(c[0], ccmp), float)

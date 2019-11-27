@@ -141,7 +141,7 @@ class Indicator(IndicatorBroadcaster):
     def _map(self, data, function, dtype):
         """
         Maps a bi-dimensional array into another bi-dimensional array, perhaps of different
-          width, given a mapping function and its dtype
+          width, given a mapping function and its dtype.
         :param data: The data to use as map source.
         :param function: The function used to map the data.
         :param dtype: The dtype for the new array.
@@ -150,3 +150,33 @@ class Indicator(IndicatorBroadcaster):
 
         mapped = list(function(data[idx, :]) for idx in range(data.shape[0]))
         return array(mapped, dtype=dtype)
+
+    def _tail_slice(self, data, start, end, tail_size):
+        """
+        Creates a slice of the given data (which will most often a source of the
+          same scale/interval of the current indicator, and often a dependency)
+          by considering the start and end indices (which are often provided in
+          the context of data update) and a positive integer tail size.
+
+        The slice is created according to the following criteria:
+          - First, the end index is usually as-is, since it is the pivot index
+            to start calculating the tail, which extends backward.
+          - The start index will be before the end index, and will be considered.
+          - Then we subtract (tail_size - 1) to the start index: for each index
+            iteration, we should consider the start of its tail is exactly
+            (tail_size - 1) steps behind, and includes this step as the last.
+          - However, when computing slices, it may occur that such new index is
+            below 0, so we truncate it to 0. In such cases, the slicing will
+            have less elements than following slices.
+
+        An array is returned, which may actually have less elements than the
+          result of (end - start + tail_size - 1), if the data has less elements.
+        :param data: The data or source being sliced.
+        :param start: The start index - usually in the context of an update operation.
+        :param end: The end index - usually in the context of an update operation.
+        :param tail_size: The tail size.
+        :return: A slice of the given data.
+        """
+
+        return data[max(0, start + 1 - tail_size):end]
+
