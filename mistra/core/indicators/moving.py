@@ -48,23 +48,19 @@ class MovingMean(Indicator):
         :param end: The end index to update.
         """
 
-        print("Updating mean with indices:", start, end)
-
         data = self._parent[max(0, start + 1 - self._tail_size):end]
         if self._candle_component:
             data = self._map(data, lambda c: getattr(c[0], self._candle_component), float)
 
-        print("Size of normalized data:", data.shape[0])
+        offset = data.shape[0] - end + start + 1
 
         for idx in range(0, end - start):
-            tail_start = idx + 1 - self._tail_size
-            tail_end = idx + 1
+            tail_end = idx + offset
+            tail_start = tail_end - self._tail_size
             if start + tail_start < 0 and self._nan_on_short_tail:
                 self._data[start + idx] = NaN
             else:
                 self._data[start + idx] = data[max(0, tail_start):tail_end].sum() / self._tail_size
-
-        print("Size of final data:", len(self._data))
 
     @property
     def parent(self):
