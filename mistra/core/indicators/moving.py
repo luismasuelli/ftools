@@ -52,14 +52,11 @@ class MovingMean(Indicator):
         if self._candle_component:
             data = self._map(data, lambda c: getattr(c[0], self._candle_component), float)
 
-        offset = data.shape[0] - end + start + 1
-        for idx in range(0, end - start):
-            tail_end = idx + offset
-            tail_start = tail_end - self._tail_size
-            if start + tail_start < 0 and self._nan_on_short_tail:
-                self._data[start + idx] = NaN
+        for tail_start, tail_end, incomplete, idx in self._tail_iterate(data, start, end, self._tail_size):
+            if incomplete and self._nan_on_short_tail:
+                self._data[idx] = NaN
             else:
-                self._data[start + idx] = data[max(0, tail_start):tail_end].sum() / self._tail_size
+                self._data[idx] = data[tail_start:tail_end].sum() / self._tail_size
 
     @property
     def parent(self):
@@ -123,12 +120,7 @@ class MovingVariance(Indicator):
         :return:
         """
 
-        print("Calculating variance on indices:", start, end)
-
         means = self._moving_mean[start:end]
-
-        print("Means shape:", means.shape)
-
         tail_size = self._moving_mean.tail_size
         values = self._tail_slice(self._moving_mean.parent, start, end, tail_size)
         ccmp = self._moving_mean.candle_component
@@ -141,12 +133,12 @@ class MovingVariance(Indicator):
         # This one HAS to be calculated.
         variance = empty((end - start, 1), dtype=float)
 
-        offset = values.shape[0] - end + start + 1
-        for idx in range(0, end - start):
-            tail_end = idx + offset
-            tail_start = tail_end - tail_size
-            mean = means[idx]
-            variance[idx] = ((values[max(0, tail_start):tail_end] - mean) ** 2).sum() / n
+        for tail_start, tail_end, incomplete, idx in self._tail_iterate(values, start, end, tail_size):
+            mean = means[idx - start]
+            if incomplete:
+                variance[idx - start] = NaN
+            else:
+                variance[idx - start] = ((values[tail_start:tail_end] - mean) ** 2).sum() / n
 
         # If we need the standard error, we also have to calculate this one.
         stderr = None

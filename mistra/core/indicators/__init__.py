@@ -180,3 +180,31 @@ class Indicator(IndicatorBroadcaster):
 
         return data[max(0, start + 1 - tail_size):end]
 
+    def _tail_iterate(self, data, start, end, tail_size):
+        """
+        Teaming with the _tail_slice utility method, returns a generator which will
+          iterate over the given data (which will most often be a dependency of the
+          same scale), appropriately indexed to get the tail start, the tail end,
+          whether a complete tail was fetched this iteration, and the actual slice
+          of data corresponding to this iteration, given the overall start, end,
+          and tail size for the given data.
+        :param data: The data being iterated. It was already sliced by _tail_size.
+        :param start: The start index - usually in the context of an update operation.
+        :param end: The end index - usually in the context of an update operation.
+        :param tail_size: The tail size.
+        :return: A generator yielding tuples like:
+          (local tail start index,
+           local tail end index,
+           tail is incomplete,
+           global index)
+        """
+
+        offset = data.shape[0] - end + start
+        for idx in range(0, end - start):
+            tail_end = idx + 1 + offset
+            tail_start = tail_end - tail_size
+            incomplete = False
+            if tail_start < 0:
+                tail_start = 0
+                incomplete = True
+            yield tail_start, tail_end, incomplete, start + idx
