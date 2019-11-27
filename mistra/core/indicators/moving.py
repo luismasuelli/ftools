@@ -53,7 +53,6 @@ class MovingMean(Indicator):
             data = self._map(data, lambda c: getattr(c[0], self._candle_component), float)
 
         offset = data.shape[0] - end + start + 1
-
         for idx in range(0, end - start):
             tail_end = idx + offset
             tail_start = tail_end - self._tail_size
@@ -141,9 +140,11 @@ class MovingVariance(Indicator):
 
         # This one HAS to be calculated.
         variance = empty((end - start, 1), dtype=float)
+
+        offset = values.shape[0] - end + start + 1
         for idx in range(0, end - start):
-            tail_start = idx + 1 - tail_size
-            tail_end = idx + 1
+            tail_end = idx + offset
+            tail_start = tail_end - tail_size
             mean = means[idx]
             variance[idx] = ((values[max(0, tail_start):tail_end] - mean) ** 2).sum() / n
 
