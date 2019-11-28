@@ -9,5 +9,6 @@ setup(
     author='luismasuelli',
     author_email='luisfmasuelli@gmail.com',
     description='MISTRA (Market InSights / TRading Algorithms) provides core support to market timelapses and indicators management',
-    python_requires='>=3.3'
+    python_requires='>=3.3',
+    install_requires=['numpy==1.17.4', 'requests==2.22.0', 'scipy==1.3.2']
 )
