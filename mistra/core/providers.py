@@ -43,6 +43,23 @@ class BackTestingProvider:
 
         raise NotImplemented
 
+    def _merge(self, stamp, price, source):
+        """
+        Merges a price in certain timestamp into the current source's respective candle.
+          If the stamp is not yet populated with the price for that source, it makes a
+          constant candle out of it. On the other hand, it merges the input price into
+          the current candle.
+        :param stamp: The associated timestamp of the prices.
+        :param price: The price to add or merge, which is standardized (i.e. scaled to
+          convert the decimal point to an integer).
+        :param source: The source to add or merge that price.
+        """
+
+        if source.has_item(stamp):
+            source.push(source[stamp].merge(price), stamp)
+        else:
+            source.push(Candle.constant(price))
+
     def __call__(self):
         """
         Executes the actual bulk load. Any exception is wrapped into a BackTestingProvider.Error.
