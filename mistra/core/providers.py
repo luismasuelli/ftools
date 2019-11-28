@@ -56,7 +56,7 @@ class BackTestingProvider:
         """
 
         if source.has_item(stamp):
-            source.push(source[stamp].merge(price), stamp)
+            source.push(source[stamp][0].merge(price), stamp)
         else:
             source.push(Candle.constant(price))
 
@@ -96,7 +96,7 @@ class RealTimeProvider:
         """
 
         if source.has_item(stamp):
-            source.push(source[stamp].merge(price), stamp)
+            source.push(source[stamp][0].merge(price), stamp)
         else:
             source.push(Candle.constant(price))
 

@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name='mistra',
-    version='0.0.3',
+    version='0.0.4',
     packages=['mistra.core', 'mistra.core.growing_arrays'],
     url='',
     license='MIT',
