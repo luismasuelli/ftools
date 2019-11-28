@@ -107,21 +107,12 @@ class Source(Timelapse, IndicatorBroadcaster):
         distance = end - start + 1
         # Iterating from index 1 to index {distance-1}, not including it.
         if isinstance(previous_value, int):
-            delta = float(next_value - previous_value)/distance
             for index in range(0, distance - 1):
-                self._data[start + index][0] = int(delta * (index + 1) + previous_value)
+                self._data[start + index][0] = previous_value
         elif isinstance(previous_value, Candle):
-            delta_start = float(next_value.start - previous_value.start) / distance
-            delta_end = float(next_value.end - previous_value.end) / distance
-            delta_max = float(next_value.max - previous_value.max) / distance
-            delta_min = float(next_value.min - previous_value.min) / distance
+            previous_value = previous_value.end
             for index in range(0, distance - 1):
-                self._data[start + index][0] = Candle(
-                    start=int(delta_start * (index + 1) + previous_value.start),
-                    end=int(delta_end * (index + 1) + previous_value.end),
-                    min=int(delta_min * (index + 1) + previous_value.min),
-                    max=int(delta_max * (index + 1) + previous_value.max)
-                )
+                self._data[start + index][0] = Candle.constant(previous_value)
 
     def _check_input_matching_types(self, data):
         """
