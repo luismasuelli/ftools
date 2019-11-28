@@ -223,7 +223,7 @@ moving_variance[0:]
 moving_variance[:today+timedelta(hours=5)]
 ```
 
-(continue this part later, after enabling date indexing)
+They will work just like retrieving data from sources/digests.
 
 4 - More features
 -----------------
