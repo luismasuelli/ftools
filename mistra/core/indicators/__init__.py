@@ -24,7 +24,7 @@ A quite complex network of indicators may be used. For example: One single movin
   20 time slices / candles / instants (which contains both the variance and the stderr),
   which in turn can feed 5 different Bollinger Bands indicators.
 """
-
+from datetime import date, datetime
 
 from numpy import float_, NaN, array
 from ..growing_arrays import GrowingArray
@@ -78,6 +78,16 @@ class Indicator(IndicatorBroadcaster):
 
         if self._disposed:
             raise RuntimeError("Cannot retrieve indicator data because it is disposed")
+        elif isinstance(item, (date, datetime)):
+            item = self.source.index_for(item)
+        elif isinstance(item, slice):
+            start = item.start
+            stop = item.stop
+            if isinstance(start, (date, datetime)):
+                start = self.source.index_for(start)
+            if isinstance(stop, (date, datetime)):
+                stop = self.source.index_for(stop)
+            item = slice(start, stop, item.step)
         return self._data[item]
 
     def __len__(self):
