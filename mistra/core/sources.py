@@ -157,7 +157,7 @@ class Source(Timelapse, IndicatorBroadcaster):
             self._data[push_index] = push_data
 
         # Check whether we need to interpolate, and do it.
-        left_side = self._initial if length == 0 else self._data[length][0]
+        left_side = self._initial if length == 0 else self._data[length - 1][0]
         needs_interpolation = push_index - 1 > length
         if needs_interpolation:
             if push_index - 1 - length > INTERPOLATION_WARNING_THRESHOLD:
