@@ -70,3 +70,14 @@ class Timelapse:
 
     def __len__(self):
         return len(self._data)
+
+    def has_item(self, item):
+        """
+        Tells whether this time slice has populated the given index or stamp, or not yet.
+        :param item: The index or stamp to check.
+        :return: Whether it has been populated or not.
+        """
+
+        if isinstance(item, (date, datetime)):
+            item = self.index_for(item)
+        return item < len(self._data)
