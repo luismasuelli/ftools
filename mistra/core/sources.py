@@ -8,6 +8,9 @@ from .pricing import StandardizedPrice, Candle
 from .indicator_broadcaster import IndicatorBroadcaster
 
 
+INTERPOLATION_WARNING_THRESHOLD = 30
+
+
 class Source(Timelapse, IndicatorBroadcaster):
     """
     Source frames are the origin of the data. Internally, they are organized as a sequence of indexed prices
@@ -157,8 +160,9 @@ class Source(Timelapse, IndicatorBroadcaster):
         left_side = self._initial if length == 0 else self._data[length][0]
         needs_interpolation = push_index - 1 > length
         if needs_interpolation:
-            warnings.warn(self.InterpolationWarning("Data is being added at sparse times! It may produce misleading "
-                                                    "interpolated data."))
+            if push_index - 1 - length > INTERPOLATION_WARNING_THRESHOLD:
+                warnings.warn(self.InterpolationWarning("Data is being added at sparse times! It may produce misleading "
+                                                        "interpolated data."))
             if length == 0 and left_side is None:
                 raise RuntimeError("Cannot add data: interpolation is needed for the required index "
                                    "to push the data into, but an initial value was never set for "
