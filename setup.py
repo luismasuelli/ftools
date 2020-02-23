@@ -2,8 +2,8 @@ from setuptools import setup
 
 setup(
     name='mistra',
-    version='0.0.5',
-    packages=['mistra.core', 'mistra.core.growing_arrays'],
+    version='0.0.6',
+    packages=['mistra.core', 'mistra.core.growing_arrays', 'mistra.core.indicators'],
     url='',
     license='MIT',
     author='luismasuelli',
