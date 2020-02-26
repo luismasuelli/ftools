@@ -5,7 +5,7 @@ from numpy import ndarray, uint64
 from .timelapses import Timelapse
 from .events import Event
 from .pricing import StandardizedPrice, Candle
-from .indicator_broadcaster import IndicatorBroadcaster
+from .indicator_broadcasters import IndicatorBroadcaster
 
 
 INTERPOLATION_WARNING_THRESHOLD = 30
