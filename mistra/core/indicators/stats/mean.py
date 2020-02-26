@@ -22,7 +22,7 @@ class MovingMean(TailedMixin, Indicator):
 
     def __init__(self, parent, tail_size, nan_on_short_tail=True):
         if isinstance(parent, Source):
-            if parent.dtype != int and parent.dtype != float:
+            if not issubclass(parent.dtype, (int, float)):
                 raise TypeError("The parent source frame must be either int or float")
         elif isinstance(parent, Indicator):
             if parent.width() != 1:
