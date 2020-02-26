@@ -4,21 +4,10 @@ from mistra.core.sources import Source
 from mistra.core.intervals import Interval
 from mistra.core.pricing import Candle
 from mistra.core.indicators import Indicator
-from mistra.core.indicators.moving import MovingMean, MovingVariance
+from mistra.core.indicators.plucking import Plucking
+from mistra.core.indicators.stats.mean import MovingMean
+from mistra.core.indicators.stats.variance import MovingVariance
 from mistra.core.indicators.slope import Slope
-
-
-class Identity(Indicator):
-
-    def __init__(self, source):
-        self._bc_source = source
-        Indicator.__init__(self, source)
-
-    def width(self):
-        return 1
-
-    def _update(self, start, end):
-        self._data[start:end] = self._map(self._bc_source[start:end], function=lambda row: row[0].start, dtype=float)
 
 
 class Merger(Indicator):
@@ -48,16 +37,14 @@ source.push(array(list(Candle.constant(v) for v in (16, 18, 20, 22)), dtype=Cand
 print(source[:])
 
 
-identity = Identity(source)
-movmean2 = MovingMean(source, 2)
-merger = Merger(movmean2, identity)
-slope = Slope(source)
+plucking = Plucking(source)
+movmean2 = MovingMean(plucking, 2)
 variance = MovingVariance(movmean2, var=True, stderr=True, unbiased=True)
+slope = Slope(plucking)
 
 source.push(array(list(Candle.constant(v) for v in (100, 200, 300, 400, 500)), dtype=Candle))
 
-print("identity:", identity[:])
 print("moving mean:", movmean2[:])
-print("merger", merger[:])
 print("variance", variance[:])
 print("slope", slope[:])
+print("plucking", plucking[:])
