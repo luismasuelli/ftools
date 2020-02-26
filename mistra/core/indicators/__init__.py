@@ -24,8 +24,9 @@ A quite complex network of indicators may be used. For example: One single movin
   20 time slices / candles / instants (which contains both the variance and the stderr),
   which in turn can feed 5 different Bollinger Bands indicators.
 """
-from datetime import date, datetime
 
+
+from datetime import date, datetime
 from numpy import float_, NaN, array
 from ..growing_arrays import GrowingArray
 from ..indicator_broadcasters import IndicatorBroadcaster
