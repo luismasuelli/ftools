@@ -1,6 +1,6 @@
 from numpy import empty, NaN, hstack
 from .. import Indicator
-from ..tailed import TailedMixin
+from ..mixins.tailed import TailedMixin
 from .mean import MovingMean
 
 

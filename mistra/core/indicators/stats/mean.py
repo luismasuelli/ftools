@@ -1,8 +1,7 @@
 from numpy import NaN
-
-from mistra.core.sources import Source
-from mistra.core.indicators import Indicator
-from mistra.core.indicators.tailed import TailedMixin
+from ...sources import Source
+from .. import Indicator
+from ..mixins.tailed import TailedMixin
 
 
 class MovingMean(TailedMixin, Indicator):

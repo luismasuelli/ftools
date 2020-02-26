@@ -1,11 +1,10 @@
 from numpy import NaN
-
 from ..sources import Source
-from ..pricing import Candle
+from .mixins.tailed import TailedMixin
 from . import Indicator
 
 
-class Slope(Indicator):
+class Slope(TailedMixin, Indicator):
     """
     Computes the nominal difference in prices between the current instant and the previous one.
     For the instant 0, computes the nominal difference in prices between that instance and the
@@ -13,19 +12,16 @@ class Slope(Indicator):
     Since time intervals are constant, this differences are, in turn, the change slopes.
     """
 
-    def __init__(self, parent, component='end'):
-        self._candle_component = None
+    def __init__(self, parent):
         if isinstance(parent, Source):
-            if parent.dtype == Candle:
-                if component not in Candle.__slots__:
-                    raise ValueError("For a candle-typed parent frame, the component argument must be among (start, "
-                                     "end, min, max). By default, it will be 'end' (standing for the end price of the "
-                                     "candle)")
-                self._candle_component = component
+            if isinstance(parent, Source):
+                if parent.dtype != int and parent.dtype != float:
+                    raise TypeError("The parent source frame must be either int or float")
         elif isinstance(parent, Indicator):
             if parent.width() != 1:
                 raise ValueError("For an indicator parent frame, its width must be 1")
         self._parent = parent
+        TailedMixin.__init__(self, 2)
         Indicator.__init__(self, parent)
 
     def _update(self, start, end):
@@ -35,20 +31,14 @@ class Slope(Indicator):
         :param end: The end index to update.
         """
 
-        data = self._tail_slice(self._parent, start, end, 2)
-        if self._candle_component:
-            data = self._map(data, lambda c: getattr(c[0], self._candle_component), float)
-
-        for tail_start, tail_end, incomplete, idx in self._tail_iterate(data, start, end, 2):
+        for idx, chunk, incomplete in self._tail_iterator(start, end, self._parent):
             if incomplete:
-                if self.source.initial is None:
+                if self._parent.initial is None:
                     self._data[idx] = NaN
-                elif self._candle_component:
-                    self._data[idx] = data[tail_end - 1] - getattr(self.source.initial, self._candle_component)
                 else:
-                    self._data[idx] = data[tail_end - 1] - self.source.initial
+                    self._data[idx] = chunk[0] - self._parent.initial
             else:
-                self._data[idx] = data[tail_end - 1] - data[tail_start]
+                self._data[idx] = chunk[1] - chunk[0]
 
     @property
     def parent(self):
@@ -57,11 +47,3 @@ class Slope(Indicator):
         """
 
         return self._parent
-
-    @property
-    def candle_component(self):
-        """
-        The candle component, if the underlying source is of Candle type.
-        """
-
-        return self._candle_component
