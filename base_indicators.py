@@ -4,7 +4,6 @@ from mistra.core.sources import Source
 from mistra.core.intervals import Interval
 from mistra.core.pricing import Candle
 from mistra.core.indicators import Indicator
-from mistra.core.indicators.plucking import Plucking
 from mistra.core.indicators.stats.mean import MovingMean
 from mistra.core.indicators.stats.variance import MovingVariance
 from mistra.core.indicators.slope import Slope
