@@ -18,7 +18,7 @@ def map(source, item, function, dtype):
 
     data = source[item]
     if isinstance(item, slice):
-        mapped = list(function(data[idx, 0]) for idx in range(data.shape[0]))
+        mapped = list(function(data[idx]) for idx in range(data.shape[0]))
         return array(mapped, dtype=dtype)
     elif isinstance(item, int):
         return function(data)

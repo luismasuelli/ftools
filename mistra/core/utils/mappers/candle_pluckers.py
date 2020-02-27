@@ -26,7 +26,7 @@ class CandlePlucker:
         return self._component
 
     def _pluck(self, element):
-        return [getattr(element, self._component)]
+        return [getattr(element[0], self._component)]
 
     def __getitem__(self, item):
         return map(self._source, item, self._pluck, int)
