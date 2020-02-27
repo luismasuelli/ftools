@@ -12,12 +12,16 @@ class PredictorMixin:
       >= 1: A prediction made for time t will be stored at slot t+F,
       where F is the forecast size, also an integer value.
 
-    To get one of those predictions, just call get_prediction(time), which
-      takes a future time or a future time slice (this means: t+F was
-      already called for those instants). Specifying a time lower than F
-      will return NaN, while a time greater than or equal to the length
-      of the array will raise an IndexError, and the same will occur if
-      the time is lower than 0.
+    To get one of those predicted values, just call get_predicted(time),
+      which takes a future time or a future time slice (this means: t+F
+      was already called for those instants). Specifying a time lower
+      than F will return NaN, while a time greater than or equal to the
+      length of the array will raise an IndexError, and the same will
+      occur if the time is lower than 0. F is the forecast size.
+
+    To get one of those predictions (the predicted values before they
+      occur) just call get_predictions(time) instead, which is like the
+      previous get_predicted functions but moving the indices by +F.
 
     To add a new prediction at index t, which will stored at index t+F,
       make the indicator call _predict(time, value).
@@ -52,7 +56,7 @@ class PredictorMixin:
             self._predictions[final_index - 1] = NaN
             self._predictions[final_index] = value
 
-    def get_predictions(self, time):
+    def get_predicted(self, time):
         """
         Gets the predictions for a specific time, which
           may be an integer or a slice.
@@ -61,4 +65,21 @@ class PredictorMixin:
         :return: A scalar or array of predictions.
         """
 
+        return self._predictions[time]
+
+    def get_predictions(self, time):
+        """
+        Get the predictions made at certain time instant or slice.
+        :param time: The instant or slice when the prediction(s)
+          were made.
+        :return: A scalar or array of predictions.
+        """
+
+        if isinstance(time, int):
+            time += self._forecast_size
+        elif isinstance(time, slice):
+            start, stop = time.start, time.stop
+            start = (start or 0) + self._forecast_size
+            stop = (stop or len(self._predictions)) + self._forecast_size
+            time = slice(start, stop, 1)
         return self._predictions[time]
