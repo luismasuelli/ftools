@@ -1,4 +1,4 @@
-from numpy import float_, NaN, isnan
+from numpy import float_, NaN, isnan, vstack, ones
 from ...utils.mappers.identity_mappers import IdentityMapper
 from ...growing_arrays import GrowingArray
 
@@ -26,7 +26,61 @@ class ScoredMixin:
         self._scores = GrowingArray(float_, NaN, 3600, 1)
 
     def get_score(self, time):
-        return self._scores[time][:, 0]
+        """
+        Gets the score(s) from a specific time instant or slice.
+        Negative indices are not supported and are silently clamped.
+        Specifying a step != 1 is not supported and will raise an
+          exception.
+
+        Retrieving a single entry before the reference origin (0),
+          will return NaN. For slices, no values will exist there,
+          and nothing will be included from the past, as NaNs like
+          it occurs in the single case.
+
+        Retrieving a slice in the future will consist of the last
+          score value available... repeated for the whole size of
+          the slice.
+
+        Retrieving a slice in the present will be no different.
+
+        Retrieving a slice that is partially in the present and
+          partially in the future will imply getting actual values
+          first, and getting repeated values last.
+        :param time: The time instant or slice to retrieve.
+        :return:
+        """
+        size = len(self._scores)
+        if isinstance(time, int):
+            if size == 0 or time < 0:
+                return NaN
+            else:
+                time = min(time, size - 1)
+                return self._scores[time][:, 0]
+        elif isinstance(time, slice):
+            start, stop, step = time.start, time.stop, time.step
+            if not (step is None or step == 1):
+                raise ValueError("Cannot slice the scores with a non-1 step")
+            if start is None:
+                start = 0
+            if stop is None:
+                stop = size
+            if not (isinstance(start, int) and isinstance(stop, int)) or stop < start:
+                raise ValueError("Slice's start and stop values must both be integer "
+                                 "values and the start index must be <= the stop index")
+            start = max(0, start)
+            stop = max(0, stop)
+            if size == 0:
+                return ones((stop,)) * NaN
+            elif start >= size:
+                return ones((stop - start,)) * self._scores[size - 1][:, 0]
+            elif stop <= size:
+                return self._scores[start:stop][:, 0]
+            else:
+                repeated = ones((stop - size,)) * self._scores[size - 1][:, 0]
+                return vstack((self._scores[start:size][:, 0], repeated))
+        else:
+            raise TypeError("Invalid item type while getting the scores from a scored "
+                            "object: only int or slices are supported")
 
 
 class EvolvingMetricScoredMixin(ScoredMixin):
