@@ -51,12 +51,24 @@ class ScoredMixin:
         """
         size = len(self._scores)
         if isinstance(time, int):
+            # Two distinct cases live here:
+            # - NaN will be returned if there are no items
+            #   or the requested time index is negative.
+            # - A defined value will be returned for positive
+            #   times, returning the last available scoring
+            #   if the index is out of bounds.
             if size == 0 or time < 0:
                 return NaN
             else:
                 time = min(time, size - 1)
                 return self._scores[time][:, 0]
         elif isinstance(time, slice):
+            # First, slices will be preprocessed to only
+            #   allow step=1 (or None), start < stop and
+            #   both being integers (by default, start
+            #   is 0 and stop is the array size). Both
+            #   start and stop are clamped to disallow
+            #   them to be negative values.
             start, stop, step = time.start, time.stop, time.step
             if not (step is None or step == 1):
                 raise ValueError("Cannot slice the scores with a non-1 step")
@@ -64,20 +76,36 @@ class ScoredMixin:
                 start = 0
             if stop is None:
                 stop = size
+            start = max(0, start)
+            stop = max(0, stop)
             if not (isinstance(start, int) and isinstance(stop, int)) or stop < start:
                 raise ValueError("Slice's start and stop values must both be integer "
                                  "values and the start index must be <= the stop index")
-            start = max(0, start)
-            stop = max(0, stop)
+            # The different scenarios will occur now:
+            # - On size == 0, there is no available score.
+            #   In this case an array of NaN values must
+            #   be returned, with size == stop - start.
+            # - On size <= start <= stop, an array will be
+            #   returned but in this time it is filled with
+            #   the last available score (the one at size
+            #   - 1).
+            # - On start <= stop <= size, an array of actual
+            #   scores will be returned.
+            # - The last case is start < size < stop. This
+            #   case has both actual values and the filling
+            #   with the last value, in two chunks:
+            #   - [start:size]: actual values.
+            #   - [size:stop]: fill values.
             if size == 0:
-                return ones((stop,)) * NaN
+                return ones((stop - start,)) * NaN
             elif start >= size:
                 return ones((stop - start,)) * self._scores[size - 1][:, 0]
             elif stop <= size:
                 return self._scores[start:stop][:, 0]
             else:
+                actual = self._scores[start:size][:, 0]
                 repeated = ones((stop - size,)) * self._scores[size - 1][:, 0]
-                return vstack((self._scores[start:size][:, 0], repeated))
+                return vstack((actual, repeated))
         else:
             raise TypeError("Invalid item type while getting the scores from a scored "
                             "object: only int or slices are supported")
