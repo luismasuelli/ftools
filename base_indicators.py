@@ -37,14 +37,12 @@ source.push(array(list(Candle.constant(v) for v in (16, 18, 20, 22)), dtype=Cand
 print(source[:])
 
 
-plucking = Plucking(source)
-movmean2 = MovingMean(plucking, 2)
+movmean2 = MovingMean(source, 2)
 variance = MovingVariance(movmean2, var=True, stderr=True, unbiased=True)
-slope = Slope(plucking)
+slope = Slope(source)
 
 source.push(array(list(Candle.constant(v) for v in (100, 200, 300, 400, 500)), dtype=Candle))
 
 print("moving mean:", movmean2[:])
 print("variance", variance[:])
 print("slope", slope[:])
-print("plucking", plucking[:])

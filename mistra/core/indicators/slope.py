@@ -1,27 +1,22 @@
 from numpy import NaN
-from ..sources import Source
-from .mixins.tailed import TailedMixin
+from ..utils.tail_runners import TailRunner
+from ..utils.mappers.smart_pluckers import smart_plucker
 from . import Indicator
 
 
-class Slope(TailedMixin, Indicator):
+class Slope(Indicator):
     """
     Computes the nominal difference in prices between the current instant and the previous one.
     For the instant 0, computes the nominal difference in prices between that instance and the
       initial value. If the initial value is None, the nominal difference will be NaN.
     Since time intervals are constant, this differences are, in turn, the change slopes.
+
+    Two additional arguments: component and row. They are required depending on the given parent.
     """
 
-    def __init__(self, parent):
-        if isinstance(parent, Source):
-            if isinstance(parent, Source):
-                if not issubclass(parent.dtype, (int, float)):
-                    raise TypeError("The parent source frame must be either int or float")
-        elif isinstance(parent, Indicator):
-            if parent.width() != 1:
-                raise ValueError("For an indicator parent frame, its width must be 1")
-        self._parent = parent
-        TailedMixin.__init__(self, 2)
+    def __init__(self, parent, component='end', row=0):
+        self._parent = smart_plucker(parent, component, row)
+        self._tail_runner = TailRunner(2)
         Indicator.__init__(self, parent)
 
     def _update(self, start, end):
@@ -31,7 +26,7 @@ class Slope(TailedMixin, Indicator):
         :param end: The end index to update.
         """
 
-        for idx, chunk, incomplete in self._tail_iterator(start, end, self._parent):
+        for idx, chunk, incomplete in self._tail_runner.tail_iterate(start, end, self._parent):
             if incomplete:
                 if self._parent.initial is None:
                     self._data[idx] = NaN

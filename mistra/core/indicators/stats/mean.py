@@ -1,10 +1,10 @@
 from numpy import NaN
-from ...sources import Source
+from ...utils.mappers.smart_pluckers import smart_plucker
+from ...utils.tail_runners import TailRunner
 from .. import Indicator
-from ..mixins.tailed import TailedMixin
 
 
-class MovingMean(TailedMixin, Indicator):
+class MovingMean(Indicator):
     """
     Moving mean indicators are seldom used directly, but as dependencies for other indicators.
     They compute the moving mean of tail size = T, which is computed as the sample mean of the
@@ -18,19 +18,24 @@ class MovingMean(TailedMixin, Indicator):
 
     Finally, it can be specified to tell this indicator to store NaN instead of a moving mean if
       the index is lower than (tail size - 1).
+
+    Two additional arguments: component and row. They are required depending on the given parent.
     """
 
-    def __init__(self, parent, tail_size, nan_on_short_tail=True):
-        if isinstance(parent, Source):
-            if not issubclass(parent.dtype, (int, float)):
-                raise TypeError("The parent source frame must be either int or float")
-        elif isinstance(parent, Indicator):
-            if parent.width() != 1:
-                raise ValueError("For an indicator parent frame, its width must be 1")
-        self._parent = parent
+    def __init__(self, parent, tail_size, nan_on_short_tail=True,
+                 component='end', row=0):
+        self._parent = smart_plucker(parent, component, row)
         self._nan_on_short_tail = bool(nan_on_short_tail)
-        TailedMixin.__init__(self, tail_size)
+        self._tail_runner = TailRunner(tail_size)
         Indicator.__init__(self, parent)
+
+    @property
+    def tail_runner(self):
+        """
+        The internal tail runner.
+        """
+
+        return self._tail_runner
 
     @property
     def parent(self):
@@ -47,8 +52,8 @@ class MovingMean(TailedMixin, Indicator):
         :param end: The end index to update.
         """
 
-        for idx, chunk, incomplete in self._tail_iterator(start, end, self._parent):
+        for idx, chunk, incomplete in self._tail_runner.tail_iterate(start, end, self._parent):
             if incomplete and self._nan_on_short_tail:
                 self._data[idx] = NaN
             else:
-                self._data[idx] = chunk.sum() / self._tail_size
+                self._data[idx] = chunk.sum() / self._tail_runner.tail_size

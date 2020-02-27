@@ -1,10 +1,9 @@
 from numpy import empty, NaN, hstack
 from .. import Indicator
-from ..mixins.tailed import TailedMixin
 from .mean import MovingMean
 
 
-class MovingVariance(TailedMixin, Indicator):
+class MovingVariance(Indicator):
     """
     Based on a moving mean indicator, this indicator tracks the variance and/or the standard deviation.
     Aside from moving mean, the following arguments may be specified:
@@ -22,7 +21,6 @@ class MovingVariance(TailedMixin, Indicator):
         self._use_stderr = stderr
         self._with_unbiased_correction = unbiased
         self._moving_mean = moving_mean
-        TailedMixin.__init__(self, moving_mean.tail_size)
         Indicator.__init__(self, moving_mean)
 
     def width(self):
@@ -43,14 +41,15 @@ class MovingVariance(TailedMixin, Indicator):
         """
 
         means = self._moving_mean[start:end]
-        tail_size = self._moving_mean.tail_size
+        tail_runner = self._moving_mean.tail_runner
+        tail_size = tail_runner.tail_size
         n = tail_size
         if self._with_unbiased_correction:
             n -= 1
 
         # This one HAS to be calculated.
         variance = empty((end - start, 1), dtype=float)
-        for idx, chunk, incomplete in self._tail_iterator(start, end, self._moving_mean.parent):
+        for idx, chunk, incomplete in tail_runner.tail_iterate(start, end, self._moving_mean.parent):
             mean = means[idx - start]
             if incomplete:
                 variance[idx - start] = NaN
