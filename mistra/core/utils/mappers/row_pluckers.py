@@ -1,4 +1,4 @@
-from ..indicators import Indicator
+from ...indicators import Indicator
 from . import map
 
 
