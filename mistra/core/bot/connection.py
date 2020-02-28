@@ -179,17 +179,22 @@ class Connection:
         Attempts a connection. On success, it attempts to activate all of the existing instruments.
 
         This method invokes a method that must be implemented because it is per-implementation.
+
+        :return: Whether a connection was/will-be made, or not (because it was already connected).
         """
 
-        def on_success():
-            for key, instrument in self._instruments:
-                instrument.activate()
-            self._on_connected.trigger(self)
+        if not self._is_connected():
+            def on_success():
+                for key, instrument in self._instruments:
+                    instrument.activate()
+                self._on_connected.trigger(self)
 
-        def on_failed(reason):
-            self._on_rejected.trigger(self, reason)
-
-        self._connect(on_success, on_failed)
+            def on_failed(reason):
+                self._on_rejected.trigger(self, reason)
+            self._connect(on_success, on_failed)
+            return True
+        else:
+            return False
 
     def disconnect(self):
         """
