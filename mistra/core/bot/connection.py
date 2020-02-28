@@ -111,20 +111,20 @@ class Connection:
 
         This method is implementation-specific. It is mandatory to implement it somehow.
 
-        Must trigger on_connected or on_rejected.
+        :param on_success: The callback to invoke when the connection succeeded.
+        :param on_failed: The callback to invoke when the connection failed.
         """
 
         raise NotImplemented
 
     def _disconnect(self, on_disconnected):
         """
-        Attempts a disconnection. Returns False if there was no connection beforehand,
-          and returns True otherwise. This is a user-requested disconnection and must
-          invoke on_disconnected with no arguments on success.
+        Attempts a disconnection. This is a user-requested disconnection and must invoke
+          on_disconnected with no arguments on success.
 
         This method is implementation-specific. It is mandatory to implement it somehow.
 
-        :return: Whether a disconnection was made, or not.
+        :param on_disconnected: The callback to invoke when the connection terminated.
         """
 
         raise NotImplemented
