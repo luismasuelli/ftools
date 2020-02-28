@@ -113,9 +113,8 @@ class Indicator(IndicatorBroadcaster):
         """
         Processes a data update event. Such event will first be triggered from the source
         :param dependency: The dependency being updated.
-        :param start: The internal index of the dependency being updated.
-        :param end:
-        :return:
+        :param start: The internal start index of the dependency being updated.
+        :param end: The internal end index of the dependency being updated.
         """
 
         # The maximum requested read for a dependency is the topmost read index
@@ -148,16 +147,3 @@ class Indicator(IndicatorBroadcaster):
         """
 
         raise NotImplemented
-
-    def _map(self, data, function, dtype):
-        """
-        Maps a bi-dimensional array into another bi-dimensional array, perhaps of different
-          width, given a mapping function and its dtype.
-        :param data: The data to use as map source.
-        :param function: The function used to map the data.
-        :param dtype: The dtype for the new array.
-        :return: A new array with the mapped data.
-        """
-
-        mapped = list(function(data[idx, :]) for idx in range(data.shape[0]))
-        return array(mapped, dtype=dtype)
