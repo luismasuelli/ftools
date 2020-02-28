@@ -66,8 +66,8 @@ class Connection:
     These methods are totally implementation-specific.
 
     Once a connection is defined, instruments can be managed in this connection and
-      then reflected also via events that can be listened for. These events come as
-      follows:
+      then reflected also via events that can be listened for. ONLY CANDLE-BASED
+      INSTRUMENTS ARE SUPPORTED SO FAR. These events come as follows:
       - on_instrument_added: Tells when the connection configured a new instrument.
       - on_instrument_disposed: Tells when the connection disposed an instrument.
     These events may trigger even if there's currently no connection, because the
@@ -158,12 +158,17 @@ class Connection:
 
         raise NotImplemented
 
-    def _create_instrument(self, key, granularity):
+    def _create_instrument(self, key, stamp, granularity):
         """
-        Instantiates an instrument.
+        Instantiates a candle-based instrument. It may also fetch the initial values for
+          the bid/ask instrument sources, but it is not mandatory if the instrument
+          manages to fill all the data by itself.
 
         This method is implementation-specific. It is mandatory to implement it somehow.
 
+        :param key: The instrument key.
+        :param stamp: The starting timestamp of the instrument work.
+        :param granularity: The time granularity.
         :return: The instrument instance.
         """
 
@@ -241,7 +246,7 @@ class Connection:
         else:
             return None
 
-    def add_instrument(self, key, granularity=Interval.MINUTE):
+    def add_instrument(self, key, stamp, granularity=Interval.MINUTE):
         """
         Creates an instrument by its key. The instrument instance will be created and, if the
           connection is ready, it will also be "enabled".
@@ -249,12 +254,13 @@ class Connection:
         This property invokes methods that must be implemented because it is per-implementation.
 
         :param key: The instrument key to use.
+        :param stamp: The earliest timestamp this source will measure/start working with.
         :param granularity: The time granularity to use.
         :return: The instrument, whether it is
         """
 
         if key not in self._instruments:
-            self._instruments[key] = self._create_instrument(key, granularity)
+            self._instruments[key] = self._create_instrument(key, stamp, granularity)
         instrument = self._instruments[key]
         self._on_instrument_added.trigger(self, instrument)
         if self._is_connected():
