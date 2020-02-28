@@ -52,6 +52,10 @@ def fix_input(index, expected_width, expected_length, expected_type, value):
     :return: The fixed value, if no exception occurs.
     """
 
+    # If the input is an iterable, convert it to an 1-dimensional array.
+    if isinstance(value, (tuple, list)):
+        value = array(value)
+
     if isinstance(index, slice):
         if not isinstance(value, ndarray) and value.dtype != expected_type:
             raise TypeError("When setting a slice, the value must be a numpy array of (stop - start)x(width) "
