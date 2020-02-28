@@ -1,3 +1,4 @@
+from ..intervals import Interval
 from ..events import Event
 
 
@@ -82,8 +83,9 @@ class Connection:
 
     Finally, there are these methods used to manage instruments:
       - get_supported_instruments(): Lists the instruments supported by this broker.
-      - add_instrument(code): Adds an instrument. It does nothing if the instrument
-        is already added. On success, the on_instrument_added is disposed.
+      - add_instrument(code[, granularity]): Adds an instrument by its code and using
+        the specified time granularity (by default, 1 minute). It does nothing if the
+        instrument is already added. On success, the on_instrument_added is triggered.
       - dispose_instrument(code): Disposes an instrument. It does nothing if the
         instrument is not present. Disposing an instrument is a per-instrument
         behaviour, but this connection object executes that behaviour and then
@@ -156,7 +158,7 @@ class Connection:
 
         raise NotImplemented
 
-    def _create_instrument(self, key):
+    def _create_instrument(self, key, granularity):
         """
         Instantiates an instrument.
 
@@ -239,7 +241,7 @@ class Connection:
         else:
             return None
 
-    def add_instrument(self, key):
+    def add_instrument(self, key, granularity=Interval.MINUTE):
         """
         Creates an instrument by its key. The instrument instance will be created and, if the
           connection is ready, it will also be "enabled".
@@ -247,11 +249,12 @@ class Connection:
         This property invokes methods that must be implemented because it is per-implementation.
 
         :param key: The instrument key to use.
+        :param granularity: The time granularity to use.
         :return: The instrument, whether it is
         """
 
         if key not in self._instruments:
-            self._instruments[key] = self._create_instrument(key)
+            self._instruments[key] = self._create_instrument(key, granularity)
         instrument = self._instruments[key]
         self._on_instrument_added.trigger(self, instrument)
         if self._is_connected():
