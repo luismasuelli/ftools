@@ -1,3 +1,4 @@
+from ..events import Event
 from ..intervals import Interval
 from ..sources import Source
 from ..pricing import Candle
@@ -36,6 +37,12 @@ class Instrument:
         self._disposed = False
         self._bid_source = Source(Candle, stamp, granularity, initial_bid)
         self._ask_source = Source(Candle, stamp, granularity, initial_ask)
+        self._on_activated = Event()
+        self._on_activation_failed = Event()
+        self._on_deactivated = Event()
+        self._on_disposed = Event()
+        # Active operations are a mapping operation_id => operation.
+        self._active_operations = {}
 
     def _activate(self, on_activated, on_failed):
         """
@@ -74,14 +81,68 @@ class Instrument:
 
         raise NotImplemented
 
+    def _dispose(self):
+        """
+        Performs the actual disposal of the instrument.
+
+        This method is implementation-specific. It is mandatory to implement it somehow.
+        """
+
     def activate(self):
-        pass
+        """
+        Attempts an activation.
+
+        This method invokes a method that must be implemented because it is per-implementation.
+
+        :return: Whether the activation was/will-be made, or not (because it was already active).
+        """
+
+        if not self._is_active():
+            def on_activated():
+                self._on_activated.trigger(self)
+
+            def on_failed(reason):
+                self._on_activation_failed.trigger(self, reason)
+
+            self._activate(on_activated, on_failed)
+            return True
+        else:
+            return False
 
     def deactivate(self):
-        pass
+        """
+        Attempts a deactivation.
+
+        This method invokes a method that must be implemented because it is per-implementation.
+
+        :return: Whether the deactivation was/will-be made, or not (because it was already not
+          active).
+        """
+
+        if self._is_active():
+            def on_deactivated():
+                self._on_deactivated.trigger(self, None)
+
+            self._deactivate(on_deactivated)
+            return True
+        else:
+            return False
 
     def dispose(self):
-        pass
+        """
+        Attempts a disposal. It will do nothing if the instrument is already disposed.
+
+        This method invokes a method that must be implemented because it is per-implementation.
+
+        :return: Whether the disposal was/will-be made, or not (bcause it was already disposed).
+        """
+
+        if not self._disposed:
+            self._dispose()
+            self._disposed = True
+            return True
+        else:
+            return False
 
     @property
     def connection(self):
@@ -102,6 +163,26 @@ class Instrument:
     @property
     def ask_source(self):
         return self._ask_source
+
+    @property
+    def active_operations(self):
+        return self._active_operations.copy()
+
+    @property
+    def on_activated(self):
+        return self._on_activated
+
+    @property
+    def on_activation_failed(self):
+        return self._on_activation_failed
+
+    @property
+    def on_deactivated(self):
+        return self._on_deactivated
+
+    @property
+    def on_disposed(self):
+        return self._on_disposed
 
     @property
     def active(self):
