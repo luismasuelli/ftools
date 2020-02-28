@@ -290,7 +290,7 @@ class Source(Timelapse, IndicatorBroadcaster):
                 if side == 2:
                     return value
                 elif side == 1 or side == 0:
-                    return value[:, side]
+                    return value[:, side:(side+1)]
                 else:
                     raise IndexError(item)
         else:
