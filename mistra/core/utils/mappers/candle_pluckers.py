@@ -12,7 +12,7 @@ class CandlePlucker:
     """
 
     def __init__(self, source, component='end'):
-        if not isinstance(source, Source) or source.dtype != Candle:
+        if not hasattr(source, '__getitem__') or source.dtype != Candle:
             raise TypeError("The source must be a Source, and Candle-based")
         if component not in Candle.__slots__:
             raise ValueError("For a candle-typed source frame, the component argument must be among (start, "
