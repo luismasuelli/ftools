@@ -1,6 +1,11 @@
+from ..intervals import Interval
+
+
 class Instrument:
     """
     Instruments belong to a connection, and under a specific instrument key.
+    They also have a specific granularity: by default 1 minute, and only to
+      the extent of being supported by the server.
 
     The lifecycle of the instrument goes like this:
       - Creation: The constructor must enable the needed components of an
@@ -20,9 +25,57 @@ class Instrument:
       look more like a pause/resume feature.
     """
 
-    def __init__(self, connection, key):
+    def __init__(self, connection, key, granularity=Interval.MINUTE):
         self._connection = connection
         self._key = key
+        self._granularity = granularity
+        self._disposed = False
+
+    def _activate(self, on_activated, on_failed):
+        """
+        Attempts an activation. If the activation succeeds, this method must invoke
+          the on_activated callback with no arguments. If the activation fails, this
+          method must invoke the on_failed callback with the reason as an argument.
+
+        This method is implementation-specific. It is mandatory to implement it somehow.
+
+        :param on_activated: The callback to invoke when the activation succeeded.
+        :param on_failed: The callback to invoke when the activation failed.
+        """
+
+        raise NotImplemented
+
+    def _deactivate(self, on_deactivated):
+        """
+        Attempts a disconnection. This is a user-requested disconnection and must invoke
+          on_deactivated with no arguments on success.
+
+        This method is implementation-specific. It is mandatory to implement it somehow.
+
+        :param on_deactivated: The callback to invoke when the instrument is deactivated.
+        """
+
+        raise NotImplemented
+
+    def _is_active(self):
+        """
+        Reports whether the instrument is active (and gathering data / iterating).
+
+        This method is implementation-specific. It is mandatory to implement it somehow.
+
+        :return: a boolean answer telling whether the instrument is active.
+        """
+
+        raise NotImplemented
+
+    def activate(self):
+        pass
+
+    def deactivate(self):
+        pass
+
+    def dispose(self):
+        pass
 
     @property
     def connection(self):
@@ -31,3 +84,31 @@ class Instrument:
     @property
     def key(self):
         return self._key
+
+    @property
+    def granularity(self):
+        return self._granularity
+
+    @property
+    def active(self):
+        """
+        Reports whether the instrument is active. As long as this property returns True,
+          the instrument is gathering data and updating periodically.
+
+        This property invokes a method that must be implemented because it is per-implementation.
+
+        :return: a boolean answer telling whether the instrument is active (running) or not.
+        """
+
+        return self._is_active()
+
+    @property
+    def disposed(self):
+        """
+        Reports whether the instrument is disposed. Disposed instruments cannot be used
+          (activated) anymore.
+
+        :return: a boolean answer telling whether the instrument is disposed or not.
+        """
+
+        return self._disposed
