@@ -198,8 +198,7 @@ class Connection:
 
     def disconnect(self):
         """
-        Attempts a disconnection. Returns False if there was no connection beforehand,
-          and returns True otherwise.
+        Attempts a disconnection.
 
         This method invokes a method that must be implemented because it is per-implementation.
 
