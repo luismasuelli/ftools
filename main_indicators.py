@@ -30,9 +30,10 @@ class Merger(Indicator):
 today = Interval.DAY.round(datetime.now())
 
 
-source = Source(Candle, today, Interval.HOUR, initial=Candle.constant(0))
-source.push(array(list(Candle.constant(v) for v in (2, 4, 6, 8, 10, 12, 14)), dtype=Candle), index=4)
-source.push(array(list(Candle.constant(v) for v in (16, 18, 20, 22)), dtype=Candle))
+source = Source(Candle, today, Interval.HOUR, initial_bid=Candle.constant(0), initial_ask=Candle.constant(1))
+source.push(array(list((Candle.constant(v-1), Candle.constant(v)) for v in (2, 4, 6, 8, 10, 12, 14)), dtype=Candle),
+            index=4)
+source.push(array(list((Candle.constant(v), Candle.constant(v+1)) for v in (16, 18, 20, 22)), dtype=Candle))
 print(source[:])
 
 
@@ -40,7 +41,7 @@ movmean2 = MovingMean(source, 2)
 variance = MovingVariance(movmean2, var=True, stderr=True, unbiased=True)
 slope = Slope(source)
 
-source.push(array(list(Candle.constant(v) for v in (100, 200, 300, 400, 500)), dtype=Candle))
+source.push(array(list((Candle.constant(v), Candle.constant(v+2)) for v in (100, 200, 300, 400, 500)), dtype=Candle))
 
 print("moving mean:", movmean2[:])
 print("variance", variance[:])
