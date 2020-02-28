@@ -276,8 +276,8 @@ class Source(Timelapse, IndicatorBroadcaster):
           0 / Source.BID, 1 / Source.ASK, or 2 / Source.BOTH. By default, if no second
           item is specified, it is assumed to be == 2 / Source.BOTH.
 
-        :param item: The item to fetch, in one of these formats: int, slice, (int, choice), (slice, choice).
-          Choice is a value in (0, 1, 2) as specified before.
+        :param item: The item to fetch, in one of these formats: int, slice, (int, side), (slice, side).
+          The side is a value in (0, 1, 2) as specified before.
         :return:
         """
 
@@ -285,12 +285,12 @@ class Source(Timelapse, IndicatorBroadcaster):
             if len(item) != 2:
                 raise IndexError(item)
             else:
-                index, choice = item
+                index, side = item
                 value = super().__getitem__(index)
-                if choice == 2:
+                if side == 2:
                     return value
-                elif choice == 1 or choice == 0:
-                    return value[:, choice]
+                elif side == 1 or side == 0:
+                    return value[:, side]
                 else:
                     raise IndexError(item)
         else:
