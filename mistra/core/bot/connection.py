@@ -62,7 +62,23 @@ class Connection:
       - disconnect(): Attempts to disconnect, if connected. On disconnection, the
         on_disconnected event will be triggered, and its reason will refer the
         user-request to disconnect.
-      These methods are totally implementation-specific.
+    These methods are totally implementation-specific.
+
+    Once a connection is defined, instruments can be managed in this connection and
+      then reflected also via events that can be listened for. These events come as
+      follows:
+      - on_instrument_added: Tells when the connection configured a new instrument.
+      - on_instrument_disposed: Tells when the connection disposed an instrument.
+    These events may trigger even if there's currently no connection, because the
+      instruments may be added regardless the connection status. They should tell the
+      listening UI to add or remove, say, a new "tab" with the involved instrument.
+      Adding an instrument doesn't tell whether the instrument is "ready" (say: to
+      receive / update market data) - this only occurs when the instrument is
+      successfully added and a connection is alive. Instruments will triggers their
+      own events regarding that).
+
+    Signatures: The callbacks for both events take two arguments: This object and the
+        instrument object.
     """
 
     def __init__(self):
@@ -73,6 +89,8 @@ class Connection:
         self._on_connected = Event()
         self._on_rejected = Event()
         self._on_disconnected = Event()
+        self._on_instrument_added = Event()
+        self._on_instrument_disposed = Event()
         self._on_update = Event()
 
     def _is_connected(self):
@@ -158,4 +176,12 @@ class Connection:
     @property
     def on_update(self):
         return self._on_update
+
+    @property
+    def on_instrument_added(self):
+        return self._on_instrument_added
+
+    @property
+    def on_instrument_disposed(self):
+        return self._on_instrument_disposed
 
