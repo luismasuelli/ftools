@@ -1,11 +1,14 @@
 from ..intervals import Interval
+from ..sources import Source
+from ..pricing import Candle
 
 
 class Instrument:
     """
     Instruments belong to a connection, and under a specific instrument key.
-    They also have a specific granularity: by default 1 minute, and only to
-      the extent of being supported by the server.
+    They also have a specific granularity (by default 1 minute, and only to
+      the extent of being supported by the server) and have activity since
+      the specified timestamp, using certain initial bid/ask values.
 
     The lifecycle of the instrument goes like this:
       - Creation: The constructor must enable the needed components of an
@@ -25,11 +28,14 @@ class Instrument:
       look more like a pause/resume feature.
     """
 
-    def __init__(self, connection, key, granularity=Interval.MINUTE):
+    def __init__(self, connection, key, stamp, granularity=Interval.MINUTE,
+                 initial_bid=None, initial_ask=None):
         self._connection = connection
         self._key = key
         self._granularity = granularity
         self._disposed = False
+        self._bid_source = Source(Candle, stamp, granularity, initial_bid)
+        self._ask_source = Source(Candle, stamp, granularity, initial_ask)
 
     def _activate(self, on_activated, on_failed):
         """
@@ -88,6 +94,14 @@ class Instrument:
     @property
     def granularity(self):
         return self._granularity
+
+    @property
+    def bid_source(self):
+        return self._bid_source
+
+    @property
+    def ask_source(self):
+        return self._ask_source
 
     @property
     def active(self):
