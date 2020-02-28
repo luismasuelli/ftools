@@ -1,6 +1,5 @@
 import warnings
 from datetime import date, datetime
-
 from numpy import ndarray, uint64
 from .timelapses import Timelapse
 from .events import Event
@@ -26,32 +25,43 @@ class Source(Timelapse, IndicatorBroadcaster):
       - Linked frames (to the current frame - they digest the data).
     """
 
+    BID = 0  # Used to retrieve only the BID side of the source's data.
+    ASK = 1  # Used to retrieve only the ASK side of the source's data.
+    BOTH = 2  # Used to retrieve both sides. Each price will be retrieved as (bid, ask).
+
     class InterpolationWarning(Warning):
         pass
 
-    def __init__(self, dtype, stamp, interval, initial=None):
+    def __init__(self, dtype, stamp, interval, initial_bid=None, initial_ask=None):
         """
         Creates a source frame with certain type, initial timestamp, an interval and an initial value.
         :param dtype: Either standardized price or candle.
         :param stamp: The initial time stamp. It will correspond to the sequence index 0.
         :param interval: The required interval.
-        :param initial: The initial value for this frame. Usually being dragged from previous period.
-          It must NOT be null if we don't plan to provide data for index 0.
+        :param initial_bid: The initial bid for this frame. Usually being dragged from previous period.
+          It must NOT be null if we don't plan to explicitly provide bid data for index 0.
+        :param initial_ask: The initial ask for this frame. Usually being dragged from previous period.
+          It must NOT be null if we don't plan to explicitly provide ask data for index 0.
         """
 
         if not interval.allowed_as_source():
             raise ValueError('The given interval is not allowed as source frame interval: %s' % interval)
         if dtype not in (StandardizedPrice, Candle):
             raise ValueError('The source frame type must be either pricing.Candle or pricing.StandardizedPrice')
-        if initial is not None:
-            if dtype == StandardizedPrice and not isinstance(initial, int):
-                raise TypeError("For pricing.StandardizedPrice type, the initial value must be integer")
-            elif dtype == Candle and not isinstance(initial, Candle):
-                raise TypeError("For pricing.Candle type, the initial value must be a candle instance")
-        Timelapse.__init__(self, dtype, None if dtype == Candle else 0, interval, 3600, 1)
+        if initial_bid is not None:
+            if dtype == StandardizedPrice and not isinstance(initial_bid, int):
+                raise TypeError("For pricing.StandardizedPrice type, the initial bid value must be integer")
+            elif dtype == Candle and not isinstance(initial_bid, Candle):
+                raise TypeError("For pricing.Candle type, the initial bid value must be a candle instance")
+        if initial_ask is not None:
+            if dtype == StandardizedPrice and not isinstance(initial_ask, int):
+                raise TypeError("For pricing.StandardizedPrice type, the initial ask value must be integer")
+            elif dtype == Candle and not isinstance(initial_ask, Candle):
+                raise TypeError("For pricing.Candle type, the initial ask value must be a candle instance")
+        Timelapse.__init__(self, dtype, None if dtype == Candle else 0, interval, 3600, 2)
         IndicatorBroadcaster.__init__(self, self)
         self._timestamp = stamp
-        self._initial = initial
+        self._initial = (initial_bid, initial_ask)
         self._on_refresh_linked_sources = Event()
         self._linked_to = None
         self._linked_last_read_ubound = 0
@@ -89,7 +99,7 @@ class Source(Timelapse, IndicatorBroadcaster):
 
         return self._initial
 
-    def _interpolate(self, previous_value, start, end, next_value):
+    def _interpolate(self, previous_values, start, end):
         """
         Causes an interpolation of data in certain index range, and considering
           boundary values.
@@ -98,10 +108,9 @@ class Source(Timelapse, IndicatorBroadcaster):
         WILL LEAD TO MISLEADING RESULTS. Perhaps in a future I'm updating
         this part, but even there, it is a bad practice.
 
-        :param previous_value: The left-side value.
+        :param previous_values: The left-side (bid, ask) value.
         :param start: The start index.
         :param end: The end index (not included).
-        :param next_value: The right-side value.
         """
 
         # We'll state a new reference system where the previous value is at 0,
@@ -109,13 +118,13 @@ class Source(Timelapse, IndicatorBroadcaster):
         #   distance - 1.
         distance = end - start + 1
         # Iterating from index 1 to index {distance-1}, not including it.
-        if isinstance(previous_value, int):
+        if isinstance(previous_values[0], int):
             for index in range(0, distance - 1):
-                self._data[start + index][0] = previous_value
-        elif isinstance(previous_value, Candle):
-            previous_value = previous_value.end
+                self._data[start + index] = previous_values
+        elif isinstance(previous_values[0], Candle):
+            previous_values = tuple(v.end for v in previous_values)
             for index in range(0, distance - 1):
-                self._data[start + index][0] = Candle.constant(previous_value)
+                self._data[start + index] = tuple(Candle.constant(v) for v in previous_values)
 
     def _check_input_matching_types(self, data):
         """
@@ -125,13 +134,15 @@ class Source(Timelapse, IndicatorBroadcaster):
         :return:
         """
 
-        if isinstance(data, Candle):
-            if self._data.dtype != Candle:
-                raise TypeError("Scalar input data must match the required type")
-        elif isinstance(data, (int, StandardizedPrice)):
-            if self._data.dtype != StandardizedPrice:
-                raise TypeError("Scalar input data must match the required type")
-        elif not isinstance(data, ndarray):
+        if isinstance(data, tuple) and len(data) == 2:
+            for v in data:
+                if isinstance(v, Candle):
+                    if self._data.dtype != Candle:
+                        raise TypeError("Scalar input data = (bid, ask) must match the required type")
+                elif isinstance(v, (int, StandardizedPrice)):
+                    if self._data.dtype != StandardizedPrice:
+                        raise TypeError("Scalar input data = (bid, ask) must match the required type")
+        elif not isinstance(data, ndarray) or len(data.shape) != 2 or data.shape[1] != 2:
             raise TypeError("Invalid input data type")
 
     def _put_and_interpolate(self, push_index, push_data):
@@ -161,15 +172,14 @@ class Source(Timelapse, IndicatorBroadcaster):
         needs_interpolation = push_index - 1 > length
         if needs_interpolation:
             if push_index - 1 - length > INTERPOLATION_WARNING_THRESHOLD:
-                warnings.warn(self.InterpolationWarning("Data is being added at sparse times! It may produce misleading "
-                                                        "interpolated data."))
+                warnings.warn(self.InterpolationWarning("Data is being added at sparse times! It may produce "
+                                                        "misleading interpolated data."))
             if length == 0 and left_side is None:
                 raise RuntimeError("Cannot add data: interpolation is needed for the required index "
                                    "to push the data into, but an initial value was never set for "
                                    "this frame")
             # Performs the interpolation.
-            right_side = self._data[push_index][0] if is_ndarray else push_data
-            self._interpolate(left_side, length, push_index, right_side)
+            self._interpolate(left_side, length, push_index)
 
     def link(self, source):
         """
@@ -209,23 +219,27 @@ class Source(Timelapse, IndicatorBroadcaster):
             self._linked_to.unregister(self._on_linked_refresh)
             self._linked_to = None
 
-    def _make_candle(self, source_elements):
+    def _make_candles(self, source_elements):
         """
         Makes a candle out of the given source elements, either by summarizing integers, or candles.
+          It will make two parallel candles: one for the bid prices, and one for the ask prices.
         :param source_elements: The elements to merge into one candle.
-        :return: The candle with the merged elements.
+        :return: The two candles with the merged elements.
         """
 
-        candle = None
+        candle_bid, candle_ask = None, None
         for source_element in source_elements:
-            if candle is None:
-                if isinstance(source_element, uint64):
-                    candle = Candle(source_element, source_element, source_element, source_element)
-                elif isinstance(source_element, Candle):
-                    candle = source_element
-            else:
-                candle = candle.merge(source_element)
-        return candle
+            def merge(candle, element):
+                if candle is None:
+                    if isinstance(element, uint64):
+                        return Candle.constant(element)
+                    elif isinstance(element, Candle):
+                        return element
+                else:
+                    return candle.merge(element)
+            candle_bid = merge(candle_bid, source_element[0])
+            candle_ask = merge(candle_ask, source_element[1])
+        return candle_bid, candle_ask
 
     def _on_linked_refresh(self, source, start, end):
         """
@@ -248,8 +262,8 @@ class Source(Timelapse, IndicatorBroadcaster):
             # From the source, we get a chunk of the relative size. Either a linear
             # array of integers, or a linear array of candles.
             # Now, make the candle out of the elements
-            candle = self._make_candle(source._data[source_index:source_index+self._linked_relative_bin_size][:, 0])
-            self._data[digest_index + base_index] = candle
+            candles = self._make_candles(source._data[source_index:source_index+self._linked_relative_bin_size][:])
+            self._data[digest_index + base_index] = candles
         self._linked_last_read_ubound = max(self._linked_last_read_ubound, end)
         # Indicators, and linked frames, of this source frame must also be notified, like in push.
         self._on_refresh_indicators.trigger(self, min_index + base_index, max_index + base_index)
@@ -260,7 +274,8 @@ class Source(Timelapse, IndicatorBroadcaster):
         Adds data, either scalar of the expected type, or a data chunk of the expected type.
         Always, at given index.
 
-        :param data: The data to add.
+        :param data: The data to add. Scalar data is an iterable of length=2 containing two
+          scalar values. Array data is an array of shape (whatever, 2).
         :param index: The index to add the data at. By default, the next index. It is allowed
           to update old data, but think it twice: it MAY trigger an update of old data, not account
           for actual data re-interpolation, and cascade the changes forward in unpredictable ways,
