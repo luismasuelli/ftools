@@ -78,7 +78,16 @@ class Connection:
       own events regarding that).
 
     Signatures: The callbacks for both events take two arguments: This object and the
-        instrument object.
+      instrument object.
+
+    Finally, there are these methods used to manage instruments:
+      - get_supported_instruments(): Lists the instruments supported by this broker.
+      - add_instrument(code): Adds an instrument. It does nothing if the instrument
+        is already added. On success, the on_instrument_added is disposed.
+      - dispose_instrument(code): Disposes an instrument. It does nothing if the
+        instrument is not present. Disposing an instrument is a per-instrument
+        behaviour, but this connection object executes that behaviour and then
+        removes the instrument from this list, and triggers on_instrument_disposed.
     """
 
     def __init__(self):
@@ -101,6 +110,21 @@ class Connection:
 
         :return: a boolean answer telling whether a valid connection (and authentication)
           is established.
+        """
+
+        raise NotImplemented
+
+    def _get_supported_instruments(self):
+        """
+        Retrieves the supported instruments as a dictionary.
+        - In their keys: the instrument key/code (e.g. EUR_USD). The code structure is
+          implementation-specific and will remain constant (for each connection knows
+          how to handle each code and its format).
+        - In their values: arbitrary data - understanding it is implementation-specific.
+
+        This method is implementation-specific. It is mandatory to implement it somehow.
+
+        :return: A dictionary with the supported instruments by this implementation.
         """
 
         raise NotImplemented
@@ -137,13 +161,32 @@ class Connection:
           all the other public fields may be considered stable. If this property is False,
           only the connection string and account id may be considered stable.
 
-        This field invoked a method that must be implemented because it is per-implementation.
+        This property invokes a method that must be implemented because it is per-implementation.
 
         :return: a boolean answer telling whether a valid connection (and authentication)
           is established.
         """
 
         return self._is_connected()
+
+    def get_supported_instruments(self):
+        """
+        Returns None if no connection is performed. Otherwise, retrieves the supported
+          instruments as a dictionary.
+          - In their keys: the instrument key/code (e.g. EUR_USD). The code structure is
+            implementation-specific and will remain constant (for each connection knows
+            how to handle each code and its format).
+          - In their values: arbitrary data - understanding it is implementation-specific.
+
+        This method invokes a method that must be implemented because it is per-implementation.
+
+        :return: None, or a dictionary.
+        """
+
+        if self._is_connected():
+            return self._get_supported_instruments()
+        else:
+            return None
 
     @property
     def connection_string(self):
