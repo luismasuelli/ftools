@@ -101,6 +101,33 @@ class Connection:
         self._on_instrument_added = Event()
         self._on_instrument_disposed = Event()
         self._on_update = Event()
+        self._instruments = {}
+
+    def _connect(self, on_success, on_failed):
+        """
+        Attempts a connection. If the connection succeeds, this method must invoke the
+          on_success callback with no arguments. If it fails, it must invoke the on_failed
+          callback with the reason as an argument.
+
+        This method is implementation-specific. It is mandatory to implement it somehow.
+
+        Must trigger on_connected or on_rejected.
+        """
+
+        raise NotImplemented
+
+    def _disconnect(self, on_disconnected):
+        """
+        Attempts a disconnection. Returns False if there was no connection beforehand,
+          and returns True otherwise. This is a user-requested disconnection and must
+          invoke on_disconnected with no arguments on success.
+
+        This method is implementation-specific. It is mandatory to implement it somehow.
+
+        :return: Whether a disconnection was made, or not.
+        """
+
+        raise NotImplemented
 
     def _is_connected(self):
         """
@@ -129,30 +156,54 @@ class Connection:
 
         raise NotImplemented
 
-    def connect(self):
+    def _create_instrument(self, key):
         """
-        Attempts a connection.
+        Instantiates an instrument.
 
         This method is implementation-specific. It is mandatory to implement it somehow.
 
-        Must trigger on_connected or on_rejected.
+        :return: The instrument instance.
         """
 
         raise NotImplemented
+
+    def connect(self):
+        """
+        Attempts a connection. On success, it attempts to activate all of the existing instruments.
+
+        This method invokes a method that must be implemented because it is per-implementation.
+        """
+
+        def on_success():
+            for key, instrument in self._instruments:
+                instrument.activate()
+            self._on_connected.trigger(self)
+
+        def on_failed(reason):
+            self._on_rejected.trigger(self, reason)
+
+        self._connect(on_success, on_failed)
 
     def disconnect(self):
         """
         Attempts a disconnection. Returns False if there was no connection beforehand,
           and returns True otherwise.
 
-        This method is implementation-specific. It is mandatory to implement it somehow.
+        This method invokes a method that must be implemented because it is per-implementation.
 
-        Must trigger on_disconnected, on disconnection, with user-request reason.
-
-        :return: Whether a disconnection was made, or not.
+        :return: Whether a disconnection was/will-be made, or not (because it was already not
+          connected).
         """
 
-        raise NotImplemented
+        if self._is_connected():
+            def on_disconnect():
+                for key, instrument in self._instruments:
+                    instrument.deactivate()
+                self._on_disconnected.trigger(self, None)
+            self._disconnect(on_disconnect)
+            return True
+        else:
+            return False
 
     @property
     def connected(self):
@@ -187,6 +238,45 @@ class Connection:
             return self._get_supported_instruments()
         else:
             return None
+
+    def add_instrument(self, key):
+        """
+        Creates an instrument by its key. The instrument instance will be created and, if the
+          connection is ready, it will also be "enabled".
+
+        This property invokes methods that must be implemented because it is per-implementation.
+
+        :param key: The instrument key to use.
+        :return: The instrument, whether it is
+        """
+
+        if key not in self._instruments:
+            self._instruments[key] = self._create_instrument(key)
+        instrument = self._instruments[key]
+        self._on_instrument_added.trigger(self, instrument)
+        if self._is_connected():
+            instrument.activate()
+        return instrument
+
+    def dispose_instrument(self, key):
+        """
+        Disposes an instrument, if present, by its key. The instrument will be called to disposal
+          (it will deactivate beforehand, if active).
+
+        This property invokes methods that must be implemented because it is per-implementation.
+
+        :param key: The key of the instrument to dispose.
+        :return: Whether the instrument was disposed, or not (because it is not present).
+        """
+
+        if key not in self._instruments:
+            return False
+        instrument = self._instruments[key]
+        if self._is_connected():
+            instrument.deactivate()
+        instrument.dispose()
+        self._on_instrument_disposed.trigger(self, instrument)
+        return True
 
     @property
     def connection_string(self):
