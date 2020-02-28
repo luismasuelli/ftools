@@ -43,3 +43,7 @@ linked.link(source)
 
 # Print the linked marked data.
 print(linked[:])
+
+# Print only one side (ASK, in this case).
+print(source[:, 1])
+print(linked[:, 1])

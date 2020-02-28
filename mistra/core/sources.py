@@ -269,6 +269,33 @@ class Source(Timelapse, IndicatorBroadcaster):
         self._on_refresh_indicators.trigger(self, min_index + base_index, max_index + base_index)
         self._on_refresh_linked_sources.trigger(self, min_index + base_index, max_index + base_index)
 
+    def __getitem__(self, item):
+        """
+        Allows retrieving certain item  (scalar or slice) from the underlying data.
+          In particular, sources allow a second item to be specified, constrained to
+          0 / Source.BID, 1 / Source.ASK, or 2 / Source.BOTH. By default, if no second
+          item is specified, it is assumed to be == 2 / Source.BOTH.
+
+        :param item: The item to fetch, in one of these formats: int, slice, (int, choice), (slice, choice).
+          Choice is a value in (0, 1, 2) as specified before.
+        :return:
+        """
+
+        if isinstance(item, tuple):
+            if len(item) != 2:
+                raise IndexError(item)
+            else:
+                index, choice = item
+                value = super().__getitem__(index)
+                if choice == 2:
+                    return value
+                elif choice == 1 or choice == 0:
+                    return value[:, choice]
+                else:
+                    raise IndexError(item)
+        else:
+            return super().__getitem__(item)
+
     def push(self, data, index=None):
         """
         Adds data, either scalar of the expected type, or a data chunk of the expected type.
