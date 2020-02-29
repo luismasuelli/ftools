@@ -37,8 +37,8 @@ class BackTestingProvider:
     def _execute(self):
         """
         This abstract method must be implemented to execute the actual provision
-          and also ensure to return two sources (buy price, sale price) in a tuple.
-        :return: A tuple of two sources: (buy price, sale price).
+          and also ensure to return a source as result, providing both bid/ask
+          prices in it..
         """
 
         raise NotImplemented
