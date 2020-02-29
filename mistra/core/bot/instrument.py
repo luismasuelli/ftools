@@ -35,8 +35,7 @@ class Instrument:
         self._key = key
         self._granularity = granularity
         self._disposed = False
-        self._bid_source = Source(Candle, stamp, granularity, initial_bid)
-        self._ask_source = Source(Candle, stamp, granularity, initial_ask)
+        self._source = Source(Candle, stamp, granularity, initial_bid, initial_ask)
         self._on_activated = Event()
         self._on_activation_failed = Event()
         self._on_deactivated = Event()
@@ -87,6 +86,8 @@ class Instrument:
 
         This method is implementation-specific. It is mandatory to implement it somehow.
         """
+
+        raise NotImplemented
 
     def activate(self):
         """
@@ -157,12 +158,8 @@ class Instrument:
         return self._granularity
 
     @property
-    def bid_source(self):
-        return self._bid_source
-
-    @property
     def ask_source(self):
-        return self._ask_source
+        return self._source
 
     @property
     def active_operations(self):
