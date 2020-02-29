@@ -1,4 +1,5 @@
 from numpy import NaN
+from ..sources import Source
 from ..utils.tail_runners import TailRunner
 from ..utils.mappers.smart_pluckers import smart_plucker
 from . import Indicator
@@ -14,8 +15,8 @@ class Slope(Indicator):
     Two additional arguments: component and row. They are required depending on the given parent.
     """
 
-    def __init__(self, parent, component='end', row=0):
-        self._parent = smart_plucker(parent, component, row)
+    def __init__(self, parent, side=Source.ASK, component='end', row=0):
+        self._parent = smart_plucker(parent, side, component, row)
         self._tail_runner = TailRunner(2)
         Indicator.__init__(self, parent)
 

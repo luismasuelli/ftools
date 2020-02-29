@@ -286,11 +286,10 @@ class Source(Timelapse, IndicatorBroadcaster):
                 raise IndexError(item)
             else:
                 index, side = item
-                value = super().__getitem__(index)
                 if side == 2:
-                    return value
+                    return super().__getitem__(index)
                 elif side == 1 or side == 0:
-                    return value[:, side:(side+1)]
+                    return super().__getitem__((index, slice(side, side+1)))
                 else:
                     raise IndexError(item)
         else:

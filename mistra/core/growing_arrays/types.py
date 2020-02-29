@@ -1,4 +1,4 @@
-from numpy import zeros, full, ndarray
+from numpy import zeros, full
 from .support import chunked_slicing, fix_slicing, fix_input
 
 
@@ -41,27 +41,38 @@ class GrowingArray:
         :return: A numpy array with the specified items, if slice, or a single element.
         """
 
-        start, stop = fix_slicing(item, self._length)
-        return self._gather(start, stop)
+        start, stop, column = fix_slicing(item, self._length)
+        return self._gather(start, stop, column)
 
-    def _gather(self, start, stop):
+    def _gather(self, start, stop, column):
         """
         Gathers required data from chunk(s).
         :param start: The start index to start gathering from.
         :param stop: The stop index (not included) to stop gathering from. It will be None if only one
           single element (a number or a (1, width) vector) is being retrieved.
+        :param column: The column index or slice to retrieve a subset of the columns instead.
+          If None, all the columns will be retrieved.
         :return: The gathered data (a single element, or a numpy array).
         """
 
         if stop is None:
             chunk_index = start // self._chunk_size
             chunk_pos = start % self._chunk_size
-            return self._chunks[chunk_index][chunk_pos][:]
+            chunk = self._chunks[chunk_index][chunk_pos]
+            return chunk[:] if column is None else chunk[column]
         else:
-            data = zeros((stop-start, self._width), dtype=self._dtype)
+            if isinstance(column, int):
+                column = slice(column, column + 1, 1)
+            elif column is None:
+                column = slice(0, self._width, 1)
+            if isinstance(column, slice):
+                width = len(range(*column.indices(self._width)))
+            else:
+                raise IndexError("The second index to retrieve, if specified, must be an integer or a slice")
+            data = zeros((stop-start, width), dtype=self._dtype)
             chunkings = chunked_slicing(start, stop, self._chunk_size)
             for (data_start, data_stop), chunk, (chunk_start, chunk_stop) in chunkings:
-                data[data_start:data_stop, :] = self._chunks[chunk][chunk_start:chunk_stop, :]
+                data[data_start:data_stop, :] = self._chunks[chunk][chunk_start:chunk_stop, column]
             return data
 
     def _allocate(self, stop):
@@ -106,7 +117,7 @@ class GrowingArray:
         :param value: The value to set.
         """
 
-        start, stop = fix_slicing(key, None)
+        start, stop, _ = fix_slicing(key, None, False)
         if stop is not None:
             value = fix_input(key, self._width, stop - start, self._dtype, value)
             self._allocate(stop)

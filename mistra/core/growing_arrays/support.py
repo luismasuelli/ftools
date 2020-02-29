@@ -1,14 +1,25 @@
 from numpy import ndarray, array
 
 
-def fix_slicing(index, logical_length):
+def fix_slicing(index, logical_length, allow_column=True):
     """
     Checks, and caps, the slices being used.
     :param index: The initial index, which may be int or slice.
     :param logical_length: The current logical length of the data. It is used to cap the indices.
       If None, indices will not be capped.
+    :param allow_column: Tells whether allowing 1 or 2 dimensions indexing.
     :return: The fixed slicing, if no exception occurs.
     """
+
+    column_index = None
+    if isinstance(index, tuple):
+        if allow_column:
+            if len(index) == 2:
+                index, column_index = index
+            else:
+                raise IndexError("At most two indices/slices (bi-dimensional indexing) are supported")
+        else:
+            raise IndexError("Only one index/slice (one-dimensional indexing) is supported")
 
     if isinstance(index, slice):
         start = index.start
@@ -19,23 +30,23 @@ def fix_slicing(index, logical_length):
         if stop is None:
             stop = logical_length
         if step and step != 1:
-            raise KeyError("Slices with step != 1 are not supported")
+            raise IndexError("Slices with step != 1 are not supported")
         if start < 0 or (stop is not None and stop < 0):
-            raise KeyError("Negative indices in slices are not supported")
+            raise IndexError("Negative indices in slices are not supported")
         if stop is not None and stop < start:
-            raise KeyError("Slices must have start <= stop indices")
+            raise IndexError("Slices must have start <= stop indices")
         elif logical_length is None:
-            return start, stop
+            return start, stop, column_index
         else:
             # Here, start will be <= stop. We will limit both by the logical_length, silently.
-            return min(start, logical_length), min(stop, logical_length)
+            return min(start, logical_length), min(stop, logical_length), column_index
     elif isinstance(index, int):
         if index < 0:
             raise IndexError("Negative indices are not supported")
         if logical_length is None:
-            return index, None
+            return index, None, column_index
         else:
-            return min(index, logical_length), None
+            return min(index, logical_length), None, column_index
     else:
         raise TypeError("Only slices (non-negative, growing, and with step 1) or non-negative integer indices are "
                         "supported")

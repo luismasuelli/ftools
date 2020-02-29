@@ -1,4 +1,5 @@
 from numpy import NaN
+from ...sources import Source
 from ...utils.mappers.smart_pluckers import smart_plucker
 from ...utils.tail_runners import TailRunner
 from .. import Indicator
@@ -22,9 +23,8 @@ class MovingMean(Indicator):
     Two additional arguments: component and row. They are required depending on the given parent.
     """
 
-    def __init__(self, parent, tail_size, nan_on_short_tail=True,
-                 component='end', row=0):
-        self._parent = smart_plucker(parent, component, row)
+    def __init__(self, parent, tail_size, nan_on_short_tail=True, side=Source.ASK, component='end', row=0):
+        self._parent = smart_plucker(parent, side, component, row)
         self._nan_on_short_tail = bool(nan_on_short_tail)
         self._tail_runner = TailRunner(tail_size)
         Indicator.__init__(self, parent)
