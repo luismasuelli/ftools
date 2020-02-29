@@ -1,5 +1,5 @@
 from ...pricing import Candle
-from ...sources import Source
+from .side_pluckers import SidePlucker
 from . import map
 
 
@@ -8,12 +8,13 @@ class CandlePlucker:
     A CandlePlucker expects a source having dtype == Candle,
       and its implementation of __getitem__ wraps the call
       to the wrapped source, and plucks the specified field
-      from each candle.
+      from each candle. The source must actually be a
+      SidePlucker instance.
     """
 
     def __init__(self, source, component='end'):
-        if not hasattr(source, '__getitem__') or source.dtype != Candle:
-            raise TypeError("The source must be a Source, and Candle-based")
+        if not isinstance(source, SidePlucker) or source.dtype != Candle:
+            raise TypeError("The source must be a SidePlucker, and Candle-based")
         if component not in Candle.__slots__:
             raise ValueError("For a candle-typed source frame, the component argument must be among (start, "
                              "end, min, max). By default, it will be 'end' (standing for the end price of the "
