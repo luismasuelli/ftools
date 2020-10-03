@@ -60,7 +60,7 @@ class BackTestingProvider:
         if source.has_item(stamp):
             buy_price = source[stamp][Source.BID].merge(buy_price)
             sale_price = source[stamp][Source.ASK].merge(sale_price)
-            source.push([buy_price, sale_price], stamp)
+            source.push((buy_price, sale_price), stamp)
         else:
             source.push((Candle.constant(buy_price),
                          Candle.constant(sale_price)))
