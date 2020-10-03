@@ -7,7 +7,7 @@ Actually, these are two different provider types, and can be compatible
   compatibilities.
 """
 
-
+from mistra.core.sources import Source
 from .pricing import Candle
 
 
@@ -28,7 +28,7 @@ class BackTestingProvider:
 
     To invoke a provider, just call it like a function:
 
-      buy_price_source, sell_price_source = my_provider_instance()
+        source = my_provider_instance()
     """
 
     class Error(Exception):
@@ -43,27 +43,32 @@ class BackTestingProvider:
 
         raise NotImplemented
 
-    def _merge(self, stamp, price, source):
+    def _merge(self, stamp, buy_price, sale_price, source):
         """
-        Merges a price in certain timestamp into the current source's respective candle.
-          If the stamp is not yet populated with the price for that source, it makes a
-          constant candle out of it. On the other hand, it merges the input price into
-          the current candle.
+        Merges two prices in certain timestamp into the current source's respective
+          candles. If the stamp is not yet populated with the price for that source,
+          it makes a constant candle out of it. On the other hand, it merges the input
+          price into the current candle.
         :param stamp: The associated timestamp of the prices.
-        :param price: The price to add or merge, which is standardized (i.e. scaled to
-          convert the decimal point to an integer).
+        :param buy_price: The buy price to add or merge, which is standardized (i.e.
+          scaled to convert the decimal point to an integer).
+        :param sale_price: The sale price to add or merge, which is standardized (i.e.
+          scaled to convert the decimal point to an integer).
         :param source: The source to add or merge that price.
         """
 
         if source.has_item(stamp):
-            source.push(source[stamp][0].merge(price), stamp)
+            buy_price = source[stamp][Source.BID].merge(buy_price)
+            sale_price = source[stamp][Source.ASK].merge(sale_price)
+            source.push([buy_price, sale_price], stamp)
         else:
-            source.push(Candle.constant(price))
+            source.push([Candle.constant(buy_price),
+                         Candle.constant(sale_price)])
 
     def __call__(self):
         """
         Executes the actual bulk load. Any exception is wrapped into a BackTestingProvider.Error.
-        :return: Two sources in a tuple: (buy price evolution, sale price evolution).
+        :return: The new source.
         """
 
         try:
