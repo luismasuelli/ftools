@@ -10,3 +10,6 @@ class IdentityMapper:
 
     def __getitem__(self, item):
         return self._parent[item]
+
+    def __len__(self):
+        return len(self._parent)

@@ -32,6 +32,9 @@ class CandlePlucker:
     def __getitem__(self, item):
         return map(self._source, item, self._pluck, int)
 
+    def __len__(self):
+        return len(self._source)
+
     @property
     def initial(self):
         """

@@ -35,3 +35,7 @@ class SidePlucker:
 
     def __getitem__(self, item):
         return self._source[item, self._side]
+
+    def __len__(self):
+        return len(self._source)
+

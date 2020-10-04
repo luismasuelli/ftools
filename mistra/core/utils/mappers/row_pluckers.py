@@ -29,3 +29,6 @@ class RowPlucker:
 
     def __getitem__(self, item):
         return map(self._indicator, item, self._pluck, float)
+
+    def __len__(self):
+        return len(self._indicator)
