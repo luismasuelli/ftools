@@ -117,6 +117,8 @@ class Source(Timelapse, IndicatorBroadcaster):
         #   and the next value is at distance, and we'll fill values from 1 to
         #   distance - 1.
         distance = end - start + 1
+        if isinstance(previous_values, (int, StandardizedPrice)):
+            previous_values = (previous_values,)
         # Iterating from index 1 to index {distance-1}, not including it.
         if isinstance(previous_values[0], int):
             for index in range(0, distance - 1):
@@ -130,8 +132,6 @@ class Source(Timelapse, IndicatorBroadcaster):
         """
         Checks whether the input matches the requirement.
         :param data: The data to check.
-        :param many: Whether the data should involve many elements (a numpy array).
-        :return:
         """
 
         if isinstance(data, tuple) and len(data) == 2:

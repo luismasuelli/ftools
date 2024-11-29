@@ -38,7 +38,7 @@ Once you create your `main_eur_usd` parent time series, you will do either of th
   - Add data to this time series.
   - Link children time series to this one.
 
-In the order you desire (data will be appropriately refreshed for the children time series anyway if you ad them later).
+In the order you desire (data will be appropriately refreshed for the children time series anyway if you add them later).
 
 2 - Adding data to the Parent Time Series
 -----------------------------------------
@@ -49,20 +49,20 @@ Following the same example, you will add data with the following methods:
 
 ```
 # Push at immediate next position.
-price = 6000000
+price = (6000000, 6000002)
 main_eur_usd.push(price)
 
 # Push at specified position, even if AFTER the immediate next.
 # It may cause interpolation of existing->new data!
 # This index is an example: It may mean 2 hours after source's date
 #   when the chosen interval size per slot is 1 second.
-price = 6000000
+price = (6000000, 6000002)
 index = 7200
 main_eur_usd.push(price, index)
 
 # We can also use a datetime index as well. If the interval is 1
 #   second, this example would be equivalent to the former.
-price = 6000000
+price = (6000000, 6000002)
 index = yesterday + timedelta(hours=2)
 main_eur_usd.push(price, index)
 ```
