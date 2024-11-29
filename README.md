@@ -73,7 +73,7 @@ main_eur_usd.push(price, index)
 from numpy import array
 
 # For all these examples, let the prices be:
-prices = array((5000000, 5000001, 5000002, 5000001, 4999999), dtype=StandardizedPrice)
+prices = array([[5000000, 5000002], [5000001, 5000003], [5000002, 5000004], [5000001, 5000003], [4999999, 5000001]], dtype=StandardizedPrice)
 
 # Push at immediate next position.
 main_eur_usd.push(prices)
@@ -103,6 +103,8 @@ And you can query the data as well, with the following considerations:
 Examples:
 
 ```
+today = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+
 main_eur_usd[0]
 
 main_eur_usd[today]
@@ -120,7 +122,7 @@ The result will be a numpy array when a slice is provided, and a scalar array (i
 3 - Linking digest frames
 -------------------------
 
-Digest frames are useful when a broader view is needed (a broader view implies a reduced
+Digest frames are useful when a broader view is needed (a broader view implies reduced
 information using wider intervals - e.g. watching digests in hours instead of in seconds).
 
 Digests are regular source frames that can be linked to other source frames. Usually, one

@@ -117,10 +117,10 @@ class Source(Timelapse, IndicatorBroadcaster):
         #   and the next value is at distance, and we'll fill values from 1 to
         #   distance - 1.
         distance = end - start + 1
-        if isinstance(previous_values, (int, StandardizedPrice)):
+        if isinstance(previous_values, (uint64, int, StandardizedPrice)):
             previous_values = (previous_values,)
         # Iterating from index 1 to index {distance-1}, not including it.
-        if isinstance(previous_values[0], int):
+        if isinstance(previous_values[0], (int, uint64)):
             for index in range(0, distance - 1):
                 self._data[start + index] = previous_values
         elif isinstance(previous_values[0], Candle):
@@ -168,7 +168,7 @@ class Source(Timelapse, IndicatorBroadcaster):
             self._data[push_index] = push_data
 
         # Check whether we need to interpolate, and do it.
-        left_side = self._initial if length == 0 else self._data[length - 1][0]
+        left_side = self._initial if length == 0 else self._data[length - 1]
         needs_interpolation = push_index - 1 > length
         if needs_interpolation:
             if push_index - 1 - length > INTERPOLATION_WARNING_THRESHOLD:
