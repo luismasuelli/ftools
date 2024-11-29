@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name='mistra',
-    version='0.0.11',
+    version='0.1.0',
     packages=['mistra.core',
               'mistra.core.growing_arrays',
               'mistra.core.indicators',
@@ -15,6 +15,6 @@ setup(
     author='luismasuelli',
     author_email='luisfmasuelli@gmail.com',
     description='MISTRA (Market InSights / TRading Algorithms) provides core support to market timelapses and indicators management',
-    python_requires='>=3.3',
-    install_requires=['numpy==1.22.0', 'requests==2.22.0', 'scipy==1.3.2']
+    python_requires='>=3.12',
+    install_requires=['numpy>=2.1.3', 'requests>=2.22.0', 'scipy>=1.14.1']
 )
