@@ -1,4 +1,4 @@
-from numpy import NaN
+from numpy import nan
 from ...sources import Source
 from ...utils.mappers.smart_pluckers import smart_plucker
 from ...utils.tail_runners import TailRunner
@@ -54,6 +54,6 @@ class MovingMean(Indicator):
 
         for idx, chunk, incomplete in self._tail_runner.tail_iterate(start, end, self._parent):
             if incomplete and self._nan_on_short_tail:
-                self._data[idx] = NaN
+                self._data[idx] = nan
             else:
                 self._data[idx] = chunk.sum() / self._tail_runner.tail_size

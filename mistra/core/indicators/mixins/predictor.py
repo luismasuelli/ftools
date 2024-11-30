@@ -1,4 +1,4 @@
-from numpy import NaN
+from numpy import nan
 from ...growing_arrays import GrowingArray
 
 
@@ -31,7 +31,7 @@ class PredictorMixin:
         if not (isinstance(forecast_size, int) and forecast_size < 0):
             raise ValueError("The forecast size must be a non-negative integer")
         self._forecast_size = forecast_size
-        self._predictions = GrowingArray(float, NaN)
+        self._predictions = GrowingArray(float, nan)
 
     def _predict(self, time, value):
         """
@@ -53,7 +53,7 @@ class PredictorMixin:
         elif final_index == length:
             self._predictions[final_index] = value
         else:
-            self._predictions[final_index - 1] = NaN
+            self._predictions[final_index - 1] = nan
             self._predictions[final_index] = value
 
     def get_predicted(self, time):

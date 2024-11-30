@@ -1,8 +1,10 @@
 from datetime import timedelta, date, datetime
+from .domains import DiscreteTimeDomain
+from .events import Event
 from .growing_arrays import GrowingArray
 
 
-class Timelapse:
+class Timelapse(DiscreteTimeDomain):
     """
     Timelapse is an abstract class allowing us to handle common utilities regarding
       datetimes in frames, digests, and indicators. They will also give yp the data,
@@ -10,59 +12,25 @@ class Timelapse:
       subclasses.
     """
 
-    def __init__(self, dtype, fill_value, interval, chunk_size, width):
+    def __init__(self, dtype, fill_value, chunk_size, width):
         """
         Creates the timelapse.
         :param dtype: The data type.
-        :param interval: The interval.
         :param chunk_size: The chunk size for the underlying growing array.
         :param width: The width of each data item.
         :param fill_value: The value to fill the empty spaces in the data when initialized.
         """
 
-        self._interval = interval
+        self._on_refresh_indicators = Event()
         self._data = GrowingArray(dtype, fill_value, chunk_size, width)
 
-    def stamp_for(self, index):
-        return self._get_timestamp() + timedelta(seconds=index * int(self._interval))
-
-    def index_for(self, stamp):
-        return int((stamp - self._get_timestamp()).total_seconds()) // int(self._interval)
-
     @property
-    def interval(self):
+    def on_refresh_indicators(self):
         """
-        The interval size for this source. Digests must use BIGGER intervals in order to be able to
-          connect to this source.
-        """
-
-        return self._interval
-
-    def _get_timestamp(self):
-        """
-        Abstract method that returns the reference timestamp to use.
-        """
-        raise NotImplemented
-
-    @property
-    def timestamp(self):
-        """
-        Stands for the initial timestamp (the one corresponding to the
-        zero index) of this timelapse.
-        :return: The initial timestamp.
+        This event will be triggered on data change so the indicators can update.
         """
 
-        return self._get_timestamp()
-
-    @property
-    def next_timestamp(self):
-        """
-        Stands for the post-final timestamp / next timestamp (the one
-        corresponding to the next stamp to use when adding new data).
-        :return: The post-final / next timestamp.
-        """
-
-        return self.stamp_for(len(self))
+        return self._on_refresh_indicators
 
     def __getitem__(self, item):
         """
@@ -86,6 +54,14 @@ class Timelapse:
 
     def __len__(self):
         return len(self._data)
+
+    @property
+    def dtype(self):
+        """
+        The underlying type of this source frame.
+        """
+
+        return self._data.dtype
 
     def has_item(self, item):
         """

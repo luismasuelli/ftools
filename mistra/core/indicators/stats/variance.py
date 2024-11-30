@@ -1,4 +1,4 @@
-from numpy import empty, NaN, hstack
+from numpy import empty, nan, hstack
 from .. import Indicator
 from .mean import MovingMean
 
@@ -52,7 +52,7 @@ class MovingVariance(Indicator):
         for idx, chunk, incomplete in tail_runner.tail_iterate(start, end, self._moving_mean.parent):
             mean = means[idx - start]
             if incomplete:
-                variance[idx - start] = NaN
+                variance[idx - start] = nan
             else:
                 variance[idx - start] = ((chunk - mean) ** 2).sum() / n
 

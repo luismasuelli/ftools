@@ -26,13 +26,11 @@ A quite complex network of indicators may be used. For example: One single movin
 """
 
 
-from datetime import date, datetime
-from numpy import float_, NaN, array
-from ..growing_arrays import GrowingArray
-from ..indicator_broadcasters import IndicatorBroadcaster
+from numpy import float64, nan
+from ..timelapses import Timelapse
 
 
-class Indicator(IndicatorBroadcaster):
+class Indicator(Timelapse):
     """
     Base class for indicators. Indicators depend ultimately on broadcasters, but they have
       to have the same source. Inheritors should have a way to distinguish each provided
@@ -45,11 +43,12 @@ class Indicator(IndicatorBroadcaster):
         if len(intervals) != 1:
             raise ValueError("Indicators must receive at least a source and/or several other indicators, "
                              "and they must have the same interval")
-        IndicatorBroadcaster.__init__(self, intervals.pop(), max(broadcaster.timestamp for broadcaster in broadcasters))
+        Timelapse.__init__(self, float64, nan, 3600, self.width())
+        self._interval = intervals.pop()
+        self._timestamp = intervals.pop(), max(broadcaster.timestamp for broadcaster in broadcasters)
         self._max_requested_start = {broadcaster: 0 for broadcaster in broadcasters}
         self._max_requested_end = {broadcaster: 0 for broadcaster in broadcasters}
         self._disposed = False
-        self._data = GrowingArray(float_, NaN, 3600, self.width())
         # Trigger first refresh
         for broadcaster in broadcasters:
             broadcaster.on_refresh_indicators.register(self._on_dependency_update)
@@ -79,20 +78,7 @@ class Indicator(IndicatorBroadcaster):
 
         if self._disposed:
             raise RuntimeError("Cannot retrieve indicator data because it is disposed")
-        elif isinstance(item, (date, datetime)):
-            item = self.source.index_for(item)
-        elif isinstance(item, slice):
-            start = item.start
-            stop = item.stop
-            if isinstance(start, (date, datetime)):
-                start = self.source.index_for(start)
-            if isinstance(stop, (date, datetime)):
-                stop = self.source.index_for(stop)
-            item = slice(start, stop, item.step)
-        return self._data[item]
-
-    def __len__(self):
-        return len(self._data)
+        return super().__getitem__(item)
 
     def dispose(self):
         """

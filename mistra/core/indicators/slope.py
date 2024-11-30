@@ -1,4 +1,4 @@
-from numpy import NaN
+from numpy import nan
 from ..sources import Source
 from ..utils.tail_runners import TailRunner
 from ..utils.mappers.smart_pluckers import smart_plucker
@@ -30,7 +30,7 @@ class Slope(Indicator):
         for idx, chunk, incomplete in self._tail_runner.tail_iterate(start, end, self._parent):
             if incomplete:
                 if self._parent.initial is None:
-                    self._data[idx] = NaN
+                    self._data[idx] = nan
                 else:
                     self._data[idx] = chunk[0] - self._parent.initial
             else:

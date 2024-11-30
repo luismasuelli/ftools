@@ -4,13 +4,12 @@ from numpy import ndarray, uint64
 from .timelapses import Timelapse
 from .events import Event
 from .pricing import StandardizedPrice, Candle
-from .indicator_broadcasters import IndicatorBroadcaster
 
 
 INTERPOLATION_WARNING_THRESHOLD = 30
 
 
-class Source(Timelapse, IndicatorBroadcaster):
+class Source(Timelapse):
     """
     Source frames are the origin of the data. Internally, they are organized as a sequence of indexed prices
       or candles (depending on the required type: standardized price or candle).
@@ -58,9 +57,9 @@ class Source(Timelapse, IndicatorBroadcaster):
                 raise TypeError("For pricing.StandardizedPrice type, the initial ask value must be integer")
             elif dtype == Candle and not isinstance(initial_ask, Candle):
                 raise TypeError("For pricing.Candle type, the initial ask value must be a candle instance")
-        Timelapse.__init__(self, dtype, None if dtype == Candle else 0, interval, 3600, 2)
-        IndicatorBroadcaster.__init__(self, self.interval, stamp)
+        Timelapse.__init__(self, dtype, None if dtype == Candle else 0, 3600, 2)
         self._timestamp = stamp
+        self._interval = interval
         self._initial = (initial_bid, initial_ask)
         self._on_refresh_linked_sources = Event()
         self._linked_to = None
@@ -74,6 +73,13 @@ class Source(Timelapse, IndicatorBroadcaster):
 
         return self._timestamp
 
+    def _get_interval(self):
+        """
+        Implements the interval property by returning the owned interval.
+        """
+
+        return self._interval
+
     @property
     def on_refresh_indicators(self):
         """
@@ -81,14 +87,6 @@ class Source(Timelapse, IndicatorBroadcaster):
         """
 
         return self._on_refresh_indicators
-
-    @property
-    def dtype(self):
-        """
-        The underlying type of this source frame.
-        """
-
-        return self._data.dtype
 
     @property
     def initial(self):

@@ -1,4 +1,4 @@
-from numpy import float_, NaN, isnan, vstack, ones
+from numpy import float64, nan, isnan, vstack, ones
 from ...utils.mappers.identity_mappers import IdentityMapper
 from ...growing_arrays import GrowingArray
 
@@ -23,7 +23,7 @@ class ScoredMixin:
     """
 
     def __init__(self):
-        self._scores = GrowingArray(float_, NaN, 3600, 1)
+        self._scores = GrowingArray(float64, nan, 3600, 1)
 
     def get_score(self, time):
         """
@@ -58,7 +58,7 @@ class ScoredMixin:
             #   times, returning the last available scoring
             #   if the index is out of bounds.
             if size == 0 or time < 0:
-                return NaN
+                return nan
             else:
                 time = min(time, size - 1)
                 return self._scores[time][:, 0]
@@ -97,7 +97,7 @@ class ScoredMixin:
             #   - [start:size]: actual values.
             #   - [size:stop]: fill values.
             if size == 0:
-                return ones((stop - start,)) * NaN
+                return ones((stop - start,)) * nan
             elif start >= size:
                 return ones((stop - start,)) * self._scores[size - 1][:, 0]
             elif stop <= size:
@@ -160,9 +160,9 @@ class EvolvingMetricScoredMixin(ScoredMixin):
         super().__init__()
         self._metrics = []
         self._next_metric_index = 1
-        self._time_array = GrowingArray(int, NaN)
+        self._time_array = GrowingArray(int, nan)
         self._metric_arrays = [
-            GrowingArray(float, NaN)
+            GrowingArray(float, nan)
         ]
         self._can_setup = True
         self._result_metric = self._make_metric(*self._setup())
@@ -221,7 +221,7 @@ class EvolvingMetricScoredMixin(ScoredMixin):
                              "but this indicator only has dependencis from 0 to "
                              "{1}".format(dependencies, idx - 1))
 
-        self._metric_arrays.append(GrowingArray(float, NaN))
+        self._metric_arrays.append(GrowingArray(float64, nan))
         self._metrics.append(self._make_metric(dependencies, implementation))
         self._next_metric_index += 1
         return idx
