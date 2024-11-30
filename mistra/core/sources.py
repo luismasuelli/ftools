@@ -245,7 +245,7 @@ class Source(Timelapse, IndicatorBroadcaster):
         """
         Handles an update from the linked source considering start date and boundaries.
         It is guaranteed that boundaries will be in the same scale of this frame, but
-          it has also be taken into account the start date to use as offset for the
+          it must also be taken into account the start date to use as offset for the
           start and end indices.
         :param source: The linked source.
         :param start: The start index, in the source, of the updated data.

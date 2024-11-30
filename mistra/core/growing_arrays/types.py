@@ -5,7 +5,7 @@ from .support import chunked_slicing, fix_slicing, fix_input
 class GrowingArray:
     """
     A growing array can grow, but never shrink. Every time new data needs to be added, the array will
-      perhaps grow to cover the required indices. Several chunks (all of the same size) will be created
+      perhaps grow to cover the required indices. Several chunks (all the same size) will be created
       on demand if a large index or a large slice -in both cases: before the current end- is provided.
 
     When getting an item or slice, IndexError will be raised as usual if out of bounds. Aside from that,
