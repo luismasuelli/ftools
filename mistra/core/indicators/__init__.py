@@ -96,8 +96,8 @@ class Indicator(IndicatorBroadcaster):
 
     def dispose(self):
         """
-        Clears this indicator from its dependency and bradcasts this call towards dependent
-          indicators.
+        Clears this indicator from its dependency and broadcasts this call
+          towards dependent indicators.
         """
 
         if not self._disposed:

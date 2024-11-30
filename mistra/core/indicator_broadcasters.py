@@ -33,3 +33,12 @@ class IndicatorBroadcaster:
         """
 
         raise NotImplementedError
+
+    def __len__(self):
+        """
+        Returns the length of this indicator (which will be: the length
+        of the underlying source and be always sure it is properly up
+        to-date with it).
+        """
+
+        return len(self._source)
