@@ -15,7 +15,7 @@ class Connection:
         access is deemed as invalid by the endpoint(s).
       - Several "representational" fields involving the connection and current
         account. These fields are a representation -since the true data is
-        actually internal and managed by the connection itself- to be used in an
+        actually internal and managed by the connection itself- to be used in a
         UI or be printed to the user. The fields are:
         - Connection string: Will always exist. It will usually represent a host,
           but there MAY exist the case where the connection string is an url that
@@ -24,7 +24,7 @@ class Connection:
           combination of both in some APIs supporting account and sub-account.
         - Account Display: This one may even be empty. It is a label holding a
           description of the account, like the real name.
-        - Funds: A float number with the funds of this account (or sub account).
+        - Funds: A float number with the funds of this account (or sub-account).
 
     Regarding the connection and account, these events will be available:
       - on_connected: A connection was successfully established.
@@ -75,8 +75,8 @@ class Connection:
       listening UI to add or remove, say, a new "tab" with the involved instrument.
       Adding an instrument doesn't tell whether the instrument is "ready" (say: to
       receive / update market data) - this only occurs when the instrument is
-      successfully added and a connection is alive. Instruments will triggers their
-      own events regarding that).
+      successfully added and a connection is alive. Instruments will trigger their
+      own events regarding that.
 
     Signatures: The callbacks for both events take two arguments: This object and the
       instrument object.
