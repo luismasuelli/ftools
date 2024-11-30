@@ -9,7 +9,7 @@ class MovingVariance(Indicator):
     Aside from moving mean, the following arguments may be specified:
     - Variance: Include the variance in the computation.
     - Std. Error: Include the standard error in the computation.
-    - Unbiased: Whether use the unbiased sample variance instead of the natural (biased) one.
+    - Unbiased: Whether to use the unbiased sample variance instead of the natural (biased) one.
     """
 
     def __init__(self, moving_mean, var=False, stderr=True, unbiased=True):

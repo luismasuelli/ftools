@@ -10,7 +10,7 @@ class Slope(Indicator):
     Computes the nominal difference in prices between the current instant and the previous one.
     For the instant 0, computes the nominal difference in prices between that instance and the
       initial value. If the initial value is None, the nominal difference will be NaN.
-    Since time intervals are constant, this differences are, in turn, the change slopes.
+    Since time intervals are constant, these differences are, in turn, the change slopes.
 
     Two additional arguments: component and row. They are required depending on the given parent.
     """

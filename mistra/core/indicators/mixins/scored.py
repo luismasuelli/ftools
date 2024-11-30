@@ -218,7 +218,7 @@ class EvolvingMetricScoredMixin(ScoredMixin):
         idx = self._next_metric_index
         if any(dep for dep in dependencies if dep < 0 or dep >= idx):
             raise IndexError("The metric being added references dependencies: {0}, "
-                             "but this indicator only has dependencis from 0 to "
+                             "but this indicator only has dependencies from 0 to "
                              "{1}".format(dependencies, idx - 1))
 
         self._metric_arrays.append(GrowingArray(float64, nan))
