@@ -46,7 +46,23 @@ class Timelapse:
 
     @property
     def timestamp(self):
+        """
+        Stands for the initial timestamp (the one corresponding to the
+        zero index) of this timelapse.
+        :return: The initial timestamp.
+        """
+
         return self._get_timestamp()
+
+    @property
+    def next_timestamp(self):
+        """
+        Stands for the post-final timestamp / next timestamp (the one
+        corresponding to the next stamp to use when adding new data).
+        :return: The post-final / next timestamp.
+        """
+
+        return self.stamp_for(len(self))
 
     def __getitem__(self, item):
         """
