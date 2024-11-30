@@ -8,7 +8,7 @@ Indicators are a different monster. They handle a growing array of width N, wher
 Indicators will depend, alternatively, on (or: "be created with"):
   - A source frame (directly).
   - Another indicator(s) (directly) and the underlying frame (indirectly). All the
-      indicators MUST have the same frame (directly or not).
+      indicators MUST have the same interval type (directly or not).
 
 Indicators cannot unlink that dependency [although they should be able to halt (stop
   updating), resume, and dispose (halt forever, and destroy the underlying data in
@@ -45,7 +45,7 @@ class Indicator(Timelapse):
                              "and they must have the same interval")
         Timelapse.__init__(self, float64, nan, 3600, self.width())
         self._interval = intervals.pop()
-        self._timestamp = intervals.pop(), max(broadcaster.timestamp for broadcaster in broadcasters)
+        self._timestamp = max(broadcaster.timestamp for broadcaster in broadcasters)
         self._max_requested_start = {broadcaster: 0 for broadcaster in broadcasters}
         self._max_requested_end = {broadcaster: 0 for broadcaster in broadcasters}
         self._disposed = False
@@ -54,6 +54,20 @@ class Indicator(Timelapse):
             broadcaster.on_refresh_indicators.register(self._on_dependency_update)
         for broadcaster in broadcasters:
             self._on_dependency_update(broadcaster, 0, len(broadcaster))
+
+    def _get_timestamp(self):
+        """
+        Implements the timestamp property by returning the owned timestamp.
+        """
+
+        return self._timestamp
+
+    def _get_interval(self):
+        """
+        Implements the interval property by returning the owned interval.
+        """
+
+        return self._interval
 
     def width(self):
         """
