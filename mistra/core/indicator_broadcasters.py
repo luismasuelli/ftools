@@ -7,9 +7,10 @@ class IndicatorBroadcaster:
       data. In the same way, provides a mean to return its own data.
     """
 
-    def __init__(self, source):
+    def __init__(self, interval, timestamp):
         self._on_refresh_indicators = Event()
-        self._source = source
+        self._interval = interval
+        self._timestamp = timestamp
 
     @property
     def on_refresh_indicators(self):
@@ -20,12 +21,21 @@ class IndicatorBroadcaster:
         return self._on_refresh_indicators
 
     @property
-    def source(self):
+    def interval(self):
         """
-        The source this broadcaster ultimately get the data from.
+        The interval for this indicator broadcaster.
         """
 
-        return self._source
+        return self._interval
+
+    @property
+    def timestamp(self):
+        """
+        Gets the starting timestamp for this broadcaster
+        :return:
+        """
+
+        return self._timestamp
 
     def __getitem__(self, item):
         """
@@ -34,11 +44,3 @@ class IndicatorBroadcaster:
 
         raise NotImplementedError
 
-    def __len__(self):
-        """
-        Returns the length of this indicator (which will be: the length
-        of the underlying source and be always sure it is properly up
-        to-date with it).
-        """
-
-        return len(self._source)

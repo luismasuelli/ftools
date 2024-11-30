@@ -41,11 +41,11 @@ class Indicator(IndicatorBroadcaster):
 
     def __init__(self, *broadcasters):
         broadcasters = set(broadcasters)
-        sources = set(broadcaster.source for broadcaster in broadcasters)
-        if len(sources) != 1:
-            raise ValueError("Indicators must receive at least a source and/or several other indicators, and "
-                             "all the given input arguments must have the same source")
-        IndicatorBroadcaster.__init__(self, sources.pop())
+        intervals = set(broadcaster.interval for broadcaster in broadcasters)
+        if len(intervals) != 1:
+            raise ValueError("Indicators must receive at least a source and/or several other indicators, "
+                             "and they must have the same interval")
+        IndicatorBroadcaster.__init__(self, intervals.pop(), max(broadcaster.timestamp for broadcaster in broadcasters))
         self._max_requested_start = {broadcaster: 0 for broadcaster in broadcasters}
         self._max_requested_end = {broadcaster: 0 for broadcaster in broadcasters}
         self._disposed = False
