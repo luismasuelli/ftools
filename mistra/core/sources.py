@@ -167,7 +167,7 @@ class Source(Timelapse):
 
         # Check whether we need to interpolate, and do it.
         left_side = self._initial if length == 0 else self._data[length - 1]
-        needs_interpolation = push_index - 1 > length
+        needs_interpolation = push_index > length
         if needs_interpolation:
             if push_index - 1 - length > INTERPOLATION_WARNING_THRESHOLD:
                 warnings.warn(self.InterpolationWarning("Data is being added at sparse times! It may produce "
