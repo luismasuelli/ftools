@@ -32,6 +32,16 @@ class Timelapse(DiscreteTimeDomain):
 
         return self._on_refresh_indicators
 
+    @property
+    def width(self):
+        """
+        Returns the width of this timelapse, based on
+        what's set in the underlying array's width.
+        :return: The width.
+        """
+
+        return self._data.width
+
     def __getitem__(self, item):
         """
         Gets values from the underlying array. It is also allowed to use timestamps instead of

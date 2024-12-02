@@ -23,7 +23,7 @@ class MovingVariance(Indicator):
         self._moving_mean = moving_mean
         Indicator.__init__(self, moving_mean)
 
-    def width(self):
+    def _initial_width(self):
         """
         We may use both flags here, so the width may be 2.
         """

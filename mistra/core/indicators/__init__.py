@@ -43,7 +43,7 @@ class Indicator(Timelapse):
         if len(intervals) != 1:
             raise ValueError("Indicators must receive at least a source and/or several other indicators, "
                              "and they must have the same interval")
-        Timelapse.__init__(self, float64, nan, 3600, self.width())
+        Timelapse.__init__(self, float64, nan, 3600, self._initial_width())
         self._interval = intervals.pop()
         self._timestamp = max(broadcaster.timestamp for broadcaster in broadcasters)
         self._max_requested_start = {broadcaster: 0 for broadcaster in broadcasters}
@@ -69,7 +69,7 @@ class Indicator(Timelapse):
 
         return self._interval
 
-    def width(self):
+    def _initial_width(self):
         """
         The width of this indicator's data.
         """
