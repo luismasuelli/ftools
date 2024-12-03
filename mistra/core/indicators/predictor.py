@@ -80,10 +80,9 @@ class Predictor(Indicator):
 
     class Columns(IntEnum):
         PREDICTION = 0
-        STRUCTURAL_ERROR_AT_PREDICTION_TIME = 1
-        STRUCTURAL_ERROR_AT_PREDICTED_TIME = 2
-        PREDICTION_DIFFERENCE = 3
-        STANDARD_ERROR = 4
+        STRUCTURAL_ERROR = 1
+        PREDICTION_DIFFERENCE = 2
+        STANDARD_ERROR = 3
 
     def __init__(self, timelapse: Timelapse, algorithm: PredictorAlgorithm,
                  side: int = None, moving_stderr_tail_size: int = 20):
@@ -127,13 +126,12 @@ class Predictor(Indicator):
         """
         The initial width for the indicator involves columns:
         - The vector for the prediction.
-        - The vector for the structural error for the moment where the prediction was done.
         - The vector for the structural error for the moment the prediction was done for.
         - The difference between the actual value and the prediction.
         - The standard deviation, taking a proper tail, considering prediction-actual.
         """
 
-        return 5
+        return 4
 
     def _update(self, start, end):
         """
@@ -159,12 +157,17 @@ class Predictor(Indicator):
         tail = self._input_data[index + 1 - self.prediction_tail_size:index + 1]
         prediction, structural_error = self._algorithm.predict(tail)
         step = self.step
-        # 2. Store the prediction in the array (at time {index}), at column PREDICTION.
-        # 3. Store the str. error in the array (at time {index}), at column STRUCTURAL_ERROR_AT_PREDICTION_TIME.
-        # 3. Store the str. error in the array (at time {index + step}), at column STRUCTURAL_ERROR_AT_PREDICTED_TIME.
+        # 2. Store the prediction in the array (at time {index + step}), at column PREDICTION.
+        self._put_value(prediction, index + step, column=self.Columns.PREDICTION)
+        # 3. Store the str. error in the array (at time {index + step}), at column STRUCTURAL_ERROR.
+        self._put_value(structural_error, index + step, column=self.Columns.STRUCTURAL_ERROR)
         # 4. Store the difference at time {index}, at column PREDICTION_DIFFERENCE. Value:
         #    (self._data[index, PREDICTION] - self._input_data[index]).
         #    It will be NaN if either value is NaN.
+        self._put_value(
+            self._data[index][self.Columns.PREDICTION] - self._input_data[index],
+            index, column=self.Columns.PREDICTION_DIFFERENCE
+        )
         # 5. Store the standard error at time {index}, at column STANDARD_ERROR. Value:
         #    if there are at least (moving_stderr_tail_size) elements in the tail:
         #        diffs = self._data[index - moving_stderr_tail_size + 1:index + 1]
@@ -172,6 +175,14 @@ class Predictor(Indicator):
         #        self._data[index, STANDARD_ERROR] = sqrt(variance)
         #        if any of these values is NaN, this value will be indeed NaN.
         #    otherwise, let it be NaN as default.
+        if index >= self._moving_stderr_tail_size - 1:
+            moving_stderr_tail = self._data[
+                index - self._moving_stderr_tail_size + 1:index + 1
+            ][self.Columns.PREDICTION_DIFFERENCE]
+            self._put_value(
+                (moving_stderr_tail ** 2).sum() / (self._moving_stderr_tail_size - 1),
+                index, column=self.Columns.STANDARD_ERROR
+            )
 
     @property
     def prediction_tail_size(self):
