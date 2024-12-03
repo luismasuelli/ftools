@@ -14,7 +14,7 @@ Indicators cannot unlink that dependency [although they should be able to halt (
   updating), resume, and dispose (halt forever, and destroy the underlying data in
   an unrecoverable way)] and pick another one, since it gives the appropriate way of
   refreshing the data on other -dependent- indicators. They are tied to the indicators
-  or source they are created from, and those indicators or source will forward data
+  or sources they are created from, and those indicators or sources will forward data
   updates to them.
 
 When an indicator is disposed, all the dependent indicators will also dispose.
