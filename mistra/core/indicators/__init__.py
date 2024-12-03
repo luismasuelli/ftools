@@ -25,7 +25,6 @@ A quite complex network of indicators may be used. For example: One single movin
   which in turn can feed 5 different Bollinger Bands indicators.
 """
 import warnings
-
 from numpy import float64, nan
 from ..timelapses import Timelapse
 
