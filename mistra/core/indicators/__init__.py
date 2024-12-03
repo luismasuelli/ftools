@@ -53,9 +53,10 @@ class Indicator(Timelapse):
         self._max_requested_start = {broadcaster: 0 for broadcaster in broadcasters}
         self._max_requested_end = {broadcaster: 0 for broadcaster in broadcasters}
         self._disposed = False
-        # Trigger first refresh
+        # Register broadcasters and trigger first refresh.
         for broadcaster in broadcasters:
             broadcaster.on_refresh_indicators.register(self._on_dependency_update)
+        self._broadcasters_read = set(broadcasters)
         for broadcaster in broadcasters:
             self._on_dependency_update(broadcaster, 0, len(broadcaster))
 
@@ -107,10 +108,10 @@ class Indicator(Timelapse):
         if not self._disposed:
             self._disposed = True
             self._data = None
-            self._broadcasters_read = None
-            for broadcaster in self._broadcasters_read.keys():
+            for broadcaster in self._broadcasters_read:
                 broadcaster.on_refresh_indicators.unregister(self._on_dependency_update)
-            for callback, receiver in self._on_refresh_indicators:
+            self._broadcasters_read = None
+            for _, receiver in self._on_refresh_indicators.listeners():
                 receiver.dispose()
 
     def _on_dependency_update(self, dependency, start, end):
