@@ -92,6 +92,18 @@ class Predictor(Indicator):
                             "subclass of PredictorAlgorithm")
         self._algorithm = algorithm
 
+    def _initial_width(self):
+        """
+        The initial width for the indicator involves columns:
+        - The vector for the prediction.
+        - The vector for the structural error for the moment where the prediction was done.
+        - The vector for the structural error for the moment the prediction was done for.
+        - The difference between the actual value and the prediction.
+        - The standard deviation, taking a proper tail, considering prediction-actual.
+        """
+
+        return 5
+
     @property
     def tail_size(self):
         """
