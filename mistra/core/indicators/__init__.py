@@ -24,7 +24,7 @@ A quite complex network of indicators may be used. For example: One single movin
   20 time slices / candles / instants (which contains both the variance and the stderr),
   which in turn can feed 5 different Bollinger Bands indicators.
 """
-
+import warnings
 
 from numpy import float64, nan
 from ..timelapses import Timelapse
@@ -37,13 +37,18 @@ class Indicator(Timelapse):
       dependency.
     """
 
-    def __init__(self, *broadcasters):
+    def __init__(self, *broadcasters, chunk_size: int = 3600):
         broadcasters = set(broadcasters)
         intervals = set(broadcaster.interval for broadcaster in broadcasters)
         if len(intervals) != 1:
             raise ValueError("Indicators must receive at least a source and/or several other indicators, "
                              "and they must have the same interval")
-        Timelapse.__init__(self, float64, nan, 3600, self._initial_width())
+        if not isinstance(chunk_size, int) or chunk_size < 0:
+            raise ValueError("The chunk_size argument must be a strictly positive integer value")
+        elif chunk_size < 60:
+            warnings.warn("The chunk size seems to be somewhat small. Ensure this value is big "
+                          "enough, especially if a lot of data will be inserted")
+        Timelapse.__init__(self, float64, nan, chunk_size, self._initial_width())
         self._interval = intervals.pop()
         self._timestamp = max(broadcaster.timestamp for broadcaster in broadcasters)
         self._max_requested_start = {broadcaster: 0 for broadcaster in broadcasters}
