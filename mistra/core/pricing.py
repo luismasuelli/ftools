@@ -1,6 +1,6 @@
 """
 Defined both the standardized price and the japanese candle. The japanese candle holds
-  a range of values for a certain time lapse, stating its minimum, maximum, start and
+  a range of values for a certain timelapse, stating its minimum, maximum, start and
   prices.
 
 Prices are standardized to integer, but perhaps every price statistic has a different scaling
