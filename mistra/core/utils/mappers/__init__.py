@@ -6,7 +6,7 @@ def map(source, item, function, dtype):
     Given a "source" (an arbitrary object supporting 1-dimensional
       slicing and returning an arbitrary numpy array), it gets an
       item (which may be using an individual index, or a slice) and
-      applies a mapping function depending the case: item or slice,
+      applies a mapping function depending on the case: item or slice,
       and returning depending on the case: individual mapped item,
       or a numpy array of mapped values.
     :param source: The source to get the item from.
