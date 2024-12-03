@@ -25,6 +25,8 @@ A quite complex network of indicators may be used. For example: One single movin
   which in turn can feed 5 different Bollinger Bands indicators.
 """
 import warnings
+
+import numpy
 from numpy import float64, nan
 from ..timelapses import Timelapse
 
@@ -81,6 +83,7 @@ class Indicator(Timelapse):
 
         return 1
 
+    @property
     def disposed(self):
         """
         Tells whether the current indicator is disposed (i.e. it will not work anymore, and data cannot
@@ -152,3 +155,71 @@ class Indicator(Timelapse):
         """
 
         raise NotImplemented
+
+    def _put_single_row_value(self, value, index, column):
+        """
+        Puts or replaces a value at certain position. This is the single
+        column case.
+        :param value: The value to put. It will be a scalar or a row.
+        :param index: The index to put the value at.
+        :param column: The optional column.
+        """
+
+        if column is None:
+            # Put the entire row.
+            self._data[index] = value
+            return
+
+        if not isinstance(column, int):
+            raise TypeError("The column must be a valid integer value")
+        width = self._initial_width()
+        if column < 0 or column >= width:
+            raise ValueError(f"The column must be between 0 and width-1 ({width - 1} for this indicator)")
+
+        # Put only one value.
+        if index >= len(self._data):
+            value_ = numpy.ones((width,)) * numpy.nan
+        else:
+            value_ = self._data[index]
+        value_[column] = value
+        self._data[index] = value_
+
+    def _put_multiple_row_value(self, value, start, stop, column):
+        """
+        Puts or replaces an array of values at certain position.
+        :param value: The values to put. If a column is specified,
+            the value must be a 1d array. Otherwise, it must be
+            a 2d array.
+        :param start: The start index.
+        :param stop: The stop index.
+        :param column: The optional column.
+        """
+
+        raise NotImplementedError("Stop index assignment is not implemented yet. It might be in future "
+                                  "versions")
+
+    def _put_value(self, value, start, stop=None, column=None):
+        """
+        Puts or replaces a value at certain position.
+        :param value: The value to put. If a column is specified, the value
+            must be int or float. If a column is not specified, then it must
+            be a 1d array.
+        :param column: The column to fill, if not the entire data for the
+            given start/stop indices.
+        :param start: The start index.
+        :param stop: The stop index. If not set, then the data to set will
+            be just 1 row.
+        """
+
+        if self.disposed:
+            raise Exception("This indicator is already disposed")
+
+        if not isinstance(start, int):
+            raise TypeError("The start argument must be a positive integer")
+        if start < 0:
+            raise ValueError("The start argument must be a positive integer")
+
+        if stop is not None:
+            self._put_multiple_row_value(value, start, stop, column)
+        else:
+            self._put_single_row_value(value, start, column)
