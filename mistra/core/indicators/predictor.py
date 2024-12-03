@@ -1,5 +1,8 @@
 import math
 import warnings
+from enum import IntEnum
+from typing import Tuple
+import numpy
 from . import Indicator
 from ..sources import Source
 from ..timelapses import Timelapse
@@ -56,6 +59,16 @@ class PredictorAlgorithm:
 
         return self._get_step()
 
+    def predict(self, x: numpy.ndarray) -> Tuple[float, float]:
+        """
+        Makes a prediction. The result of the prediction is
+        a tuple making: (prediction, structural_error).
+        :param x: The input.
+        :return: The prediction and the structural error.
+        """
+
+        raise NotImplemented
+
 
 class Predictor(Indicator):
     """
@@ -65,24 +78,31 @@ class Predictor(Indicator):
     or related stuff).
     """
 
+    class Columns(IntEnum):
+        PREDICTION = 0
+        STRUCTURAL_ERROR_AT_PREDICTION_TIME = 1
+        STRUCTURAL_ERROR_AT_PREDICTED_TIME = 2
+        PREDICTION_DIFFERENCE = 3
+        STANDARD_ERROR = 4
+
     def __init__(self, timelapse: Timelapse, algorithm: PredictorAlgorithm,
-                 side: int = None):
+                 side: int = None, moving_stderr_tail_size: int = 20):
         super().__init__(timelapse)
 
         # First, initialize which data will be read from.
-        self._data = None
+        self._input_data = None
         if isinstance(timelapse, Source):
             if side not in [Source.BID, Source.ASK]:
                 raise ValueError("When creating a Predictor indicator from a Source, "
                                  "a side must be chosen and must be either Source.BID "
                                  "or Source.ASK")
-            self._data = SidePlucker(timelapse, side)
+            self._input_data = SidePlucker(timelapse, side)
         elif isinstance(timelapse, Indicator):
             if timelapse.width != 1:
                 raise ValueError("When creating a Predictor indicator from another indicator, "
                                  "the width of that indicator must be 1. So far, multi-dimensional "
                                  "indicators are not supported yet")
-            self._data = timelapse
+            self._input_data = timelapse
         else:
             raise TypeError("The timelapse must be either a Source or an Indicator")
 
@@ -91,6 +111,17 @@ class Predictor(Indicator):
             raise TypeError("The algorithm must be specified and it must be of a strict "
                             "subclass of PredictorAlgorithm")
         self._algorithm = algorithm
+
+        # Finally, the moving STDERR tail size.
+        if isinstance(moving_stderr_tail_size, int):
+            if moving_stderr_tail_size < 2:
+                raise ValueError("The moving standard error tail size must be >= 2")
+            if moving_stderr_tail_size < 10:
+                warnings.warn("A too small standard deviation tail size was chosen. This will "
+                              "work but you might find results less accurate")
+        else:
+            raise TypeError("The moving standard error tail size must be an integer")
+        self._moving_stderr_tail_size = moving_stderr_tail_size
 
     def _initial_width(self):
         """
@@ -104,13 +135,59 @@ class Predictor(Indicator):
 
         return 5
 
+    def _update(self, start, end):
+        """
+        Performs a full update, carefully following all the steps.
+        :param start: The start position to update.
+        :param end: The end (not included) position to update.
+        """
+
+        for index in range(start, end):
+            self._update_index(index)
+
+    def _update_index(self, index):
+        """
+        Performs a per-index update, carefully following all the steps.
+        :param index: The index being updated.
+        """
+
+        # 1. First, take a tail of data. The tail will end
+        #    in the given index. If the index is < the tail
+        #    size, we'll do nothing at all here.
+        if index < self.prediction_tail_size:
+            return
+        tail = self._input_data[index + 1 - self.prediction_tail_size:index + 1]
+        prediction, structural_error = self._algorithm.predict(tail)
+        step = self.step
+        # 2. Store the prediction in the array (at time {index}), at column PREDICTION.
+        # 3. Store the str. error in the array (at time {index}), at column STRUCTURAL_ERROR_AT_PREDICTION_TIME.
+        # 3. Store the str. error in the array (at time {index + step}), at column STRUCTURAL_ERROR_AT_PREDICTED_TIME.
+        # 4. Store the difference at time {index}, at column PREDICTION_DIFFERENCE. Value:
+        #    (self._data[index, PREDICTION] - self._input_data[index]).
+        #    It will be NaN if either value is NaN.
+        # 5. Store the standard error at time {index}, at column STANDARD_ERROR. Value:
+        #    if there are at least (moving_stderr_tail_size) elements in the tail:
+        #        diffs = self._data[index - moving_stderr_tail_size + 1:index + 1]
+        #        variance = (diffs ** 2).sum() / (moving_stderr_tail_size - 1)
+        #        self._data[index, STANDARD_ERROR] = sqrt(variance)
+        #        if any of these values is NaN, this value will be indeed NaN.
+        #    otherwise, let it be NaN as default.
+
     @property
-    def tail_size(self):
+    def prediction_tail_size(self):
         """
         The underlying tail size, according to the algorithm.
         """
 
         return self._algorithm.tail_size
+
+    @property
+    def moving_stderr_tail_size(self):
+        """
+        The underlying tail size for standard error calculation.
+        """
+
+        return self._moving_stderr_tail_size
 
     @property
     def step(self):
