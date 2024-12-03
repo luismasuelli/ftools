@@ -156,7 +156,7 @@ class Indicator(Timelapse):
 
         raise NotImplemented
 
-    def _put_single_row_value(self, value, index, column):
+    def __put_single_row_value(self, value, index, column):
         """
         Puts or replaces a value at certain position. This is the single
         column case.
@@ -184,7 +184,7 @@ class Indicator(Timelapse):
         value_[column] = value
         self._data[index] = value_
 
-    def _put_multiple_row_value(self, value, start, stop, column):
+    def __put_multiple_row_value(self, value, start, stop, column):
         """
         Puts or replaces an array of values at certain position.
         :param value: The values to put. If a column is specified,
@@ -220,6 +220,6 @@ class Indicator(Timelapse):
             raise ValueError("The start argument must be a positive integer")
 
         if stop is not None:
-            self._put_multiple_row_value(value, start, stop, column)
+            self.__put_multiple_row_value(value, start, stop, column)
         else:
-            self._put_single_row_value(value, start, column)
+            self.__put_single_row_value(value, start, column)
