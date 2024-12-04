@@ -87,8 +87,6 @@ class Predictor(Indicator):
 
     def __init__(self, timelapse: Timelapse, algorithm: PredictorAlgorithm,
                  side: int = None, moving_stderr_tail_size: int = 20):
-        super().__init__(timelapse)
-
         # First, initialize which data will be read from.
         self._input_data = None
         if isinstance(timelapse, Source):
@@ -122,6 +120,7 @@ class Predictor(Indicator):
         else:
             raise TypeError("The moving standard error tail size must be an integer")
         self._moving_stderr_tail_size = moving_stderr_tail_size
+        super().__init__(timelapse)
 
     def _initial_width(self):
         """
