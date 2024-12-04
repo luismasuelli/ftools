@@ -1,3 +1,4 @@
+import datetime
 import math
 import warnings
 from enum import IntEnum
@@ -183,6 +184,86 @@ class Predictor(Indicator):
                 (moving_stderr_tail ** 2).sum() / (self._moving_stderr_tail_size - 1),
                 index, column=self.Columns.STANDARD_ERROR
             )
+
+    def _window_from_future(self, item):
+        """
+        Takes a current window (which can be: an integer, a date,
+        or a slice) and gets one that belongs to the future. This
+        allows making use of a window that belongs to LATER moments,
+        rather than the moments being deemed as "current" in the
+        given item.
+        :param item: The item.
+        :return: The translated (future) item.
+        """
+
+        if isinstance(item, int):
+            return item + self.step
+        if isinstance(item, datetime.datetime):
+            return item + datetime.timedelta(seconds=int(self.interval) * self.step)
+        if isinstance(item, slice):
+            start = item.start
+            stop = item.stop
+            step = item.step
+            return slice(
+                self._window_from_future(start),
+                self._window_from_future(stop),
+                step
+            )
+
+    def _get_column_data(self, item, column, when_computed: bool = False):
+        """
+        Gets the data from a given column for this indicator.
+        :param item: The item to get.
+        :param column: The column to get the data from.
+        :param when_computed: If true, the points will be given
+            at the time they were produced, rather than at their
+            target time.
+        :return: The data.
+        """
+
+        return self[self._window_from_future(item) if when_computed else item][column]
+
+    def get_prediction(self, item, when_computed: bool = False):
+        """
+        Gets the prediction for this indicator.
+        :param item: The item to get.
+        :param when_computed: If true, the points will be given
+            at the time they were produced, rather than at their
+            prediction time.
+        :return: The prediction data.
+        """
+
+        return self._get_column_data(item, self.Columns.PREDICTION, when_computed)
+
+    def get_structural_error(self, item, when_computed: bool = False):
+        """
+        Gets the structural error for this indicator.
+        :param item: The item to get.
+        :param when_computed: If true, the points will be given
+            at the time they were produced, rather than at their
+            prediction time.
+        :return: The structural error data.
+        """
+
+        return self._get_column_data(item, self.Columns.STRUCTURAL_ERROR, when_computed)
+
+    def get_prediction_difference(self, item):
+        """
+        Gets the prediction difference for this indicator.
+        :param item: The item to get.
+        :return: The prediction difference data.
+        """
+
+        return self._get_column_data(item, self.Columns.PREDICTION_DIFFERENCE)
+
+    def get_trailing_standard_error(self, item):
+        """
+        Gets the trailing standard error for this indicator.
+        :param item: The item to get.
+        :return: The trailing standard error data.
+        """
+
+        return self._get_column_data(item, self.Columns.STANDARD_ERROR)
 
     @property
     def prediction_tail_size(self):
