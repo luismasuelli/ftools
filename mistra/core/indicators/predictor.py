@@ -221,7 +221,7 @@ class Predictor(Indicator):
         :return: The data.
         """
 
-        return self[self._window_from_future(item) if when_computed else item][column]
+        return self[self._window_from_future(item) if when_computed else item][:, column]
 
     def get_prediction(self, item, when_computed: bool = False):
         """
