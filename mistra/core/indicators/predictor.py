@@ -132,6 +132,10 @@ class Predictor(Indicator):
         self._moving_stderr_tail_size = moving_stderr_tail_size
         super().__init__(timelapse, chunk_size=chunk_size)
 
+    @property
+    def input_data(self):
+        return self._input_data
+
     def _initial_width(self):
         """
         The initial width for the indicator involves columns:
