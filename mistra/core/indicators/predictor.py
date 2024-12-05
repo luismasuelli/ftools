@@ -70,6 +70,15 @@ class PredictorAlgorithm:
 
         raise NotImplemented
 
+    def online_train(self, x: numpy.ndarray, y: float):
+        """
+        Trains the current algorithm given the new sample.
+        :param x: The features vector.
+        :param y: The corresponding endogenous value.
+        """
+
+        # The default algorithm is: to do nothing.
+
 
 class Predictor(Indicator):
     """
@@ -168,7 +177,11 @@ class Predictor(Indicator):
             self._data[index][self.Columns.PREDICTION] - self._input_data[index],
             index, column=self.Columns.PREDICTION_DIFFERENCE
         )
-        # 5. Store the standard error at time {index}, at column STANDARD_ERROR. Value:
+        # 5. If there's an actual value in the prediction, then train it.
+        if not numpy.isnan(self._data[index][self.Columns.PREDICTION]):
+            x = self._input_data[index - (self.prediction_tail_size - 1) - step:index + 1 - step]
+            self._algorithm.online_train(x, self._input_data[index])
+        # 6. Store the standard error at time {index}, at column STANDARD_ERROR. Value:
         #    if there are at least (moving_stderr_tail_size) elements in the tail:
         #        diffs = self._data[index - moving_stderr_tail_size + 1:index + 1]
         #        variance = (diffs ** 2).sum() / (moving_stderr_tail_size - 1)
