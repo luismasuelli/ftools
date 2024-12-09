@@ -195,8 +195,35 @@ class Indicator(Timelapse):
         :param column: The optional column.
         """
 
-        raise NotImplementedError("Stop index assignment is not implemented yet. It might be in future "
-                                  "versions")
+        if not isinstance(stop, int):
+            raise TypeError("The stop argument, if specified, must be a positive integer")
+        if stop < start:
+            raise ValueError("The stop argument must be greater than, or equal to, the start argument")
+
+        if column is not None:
+            # A column is specified. Be careful here.
+            length = len(self._data)
+            if start >= length:
+                # All the data is new. Put everything as-is.
+                width = self._initial_width()
+                value_ = numpy.ones((stop - start, width)) * numpy.nan
+                value_[:, column] = value
+                self._data[start:stop] = value
+            else:
+                # First, fill/update the existing records.
+                chunk = self._data[start:length]
+                chunk[:, column] = value
+                self._data[start:length] = chunk
+
+                if stop > length:
+                    # Then, add the new ones.
+                    width = self._initial_width()
+                    value_ = numpy.ones((stop - length, width)) * numpy.nan
+                    value_[:, column] = value
+                    self._data[length:stop] = value
+        else:
+            # No column is specified: put everything as-is.
+            self._data[start:stop] = value
 
     def _put_value(self, value, start, stop=None, column=None):
         """
