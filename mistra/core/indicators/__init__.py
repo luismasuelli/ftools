@@ -208,7 +208,7 @@ class Indicator(Timelapse):
                 width = self._initial_width()
                 value_ = numpy.ones((stop - start, width)) * numpy.nan
                 value_[:, column] = value
-                self._data[start:stop] = value
+                self._data[start:stop] = value_
             else:
                 # First, fill/update the existing records.
                 chunk = self._data[start:length]
@@ -220,7 +220,7 @@ class Indicator(Timelapse):
                     width = self._initial_width()
                     value_ = numpy.ones((stop - length, width)) * numpy.nan
                     value_[:, column] = value
-                    self._data[length:stop] = value
+                    self._data[length:stop] = value_
         else:
             # No column is specified: put everything as-is.
             self._data[start:stop] = value
