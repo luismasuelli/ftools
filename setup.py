@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name='mistra',
-    version='0.1.8',
+    version='0.1.9',
     packages=['mistra.core',
               'mistra.core.growing_arrays',
               'mistra.core.indicators',
